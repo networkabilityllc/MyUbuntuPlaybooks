@@ -36,24 +36,26 @@ sudo apt install ansible -y
 ```
 
 
-**# Set Up Directories and Clone Repository**
+### Set Up Directories and Clone Repository**
 
-**Create the necessary directory and clone this repository:
-**
+**Create the necessary directory and clone this repository:**
+
 ```
 sudo mkdir /ansible_scripts
 cd /ansible_scripts
 sudo git clone https://github.com/networkabilityllc/MyUbuntuPlaybooks.git
 ```
 
-Run the Playbooks
+### Run the Playbooks
 
-Navigate to the cloned repository and run the desired playbook. For example, to run configure_dns.yml:
+**Navigate to the cloned repository and run the desired playbook. For example, to run configure_dns.yml:**
 
+```
 cd MyUbuntuPlaybooks
 ansible-playbook -i localhost configure_dns.yml
+```
 
-Disclaimer
+### Disclaimer
 
 These playbooks are provided as-is without any warranty. Use them at your own risk. Ensure you understand what each playbook does before running it on your system. The authors are not responsible for any damage or data loss that may occur from using these playbooks.
 License
