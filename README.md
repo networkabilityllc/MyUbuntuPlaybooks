@@ -61,10 +61,7 @@ cd /ansible_scripts/MyUbuntuPlaybooks
 sudo ansible-playbook -i inventory docker_install.yml
 ```
 
-```
 ---
-
-```
 
 ### Disclaimer
 
