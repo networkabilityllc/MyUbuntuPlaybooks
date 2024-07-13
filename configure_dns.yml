@@ -1,0 +1,73 @@
+---
+- name: Configure DNS with stubby
+  hosts: localhost
+  become: true
+  tasks:
+    - name: Disable systemd-resolved
+      systemd:
+        name: systemd-resolved
+        enabled: false
+        state: stopped
+
+    - name: Remove /etc/resolv.conf if it exists
+      file:
+        path: /etc/resolv.conf
+        state: absent
+
+    - name: Create interim /etc/resolv.conf with nameserver 1.1.1.1
+      copy:
+        content: |
+          nameserver 1.1.1.1
+        dest: /etc/resolv.conf
+        mode: '0644'
+
+    - name: Install stubby
+      apt:
+        name: stubby
+        state: present
+        update_cache: true
+
+    - name: Backup existing stubby.yml
+      command: mv /etc/stubby/stubby.yml /etc/stubby/stubby.yml.bak
+      args:
+        removes: /etc/stubby/stubby.yml
+
+    - name: Create new stubby.yml configuration
+      copy:
+        content: |
+          resolution_type: GETDNS_RESOLUTION_STUB
+          dns_transport_list:
+            - GETDNS_TRANSPORT_TLS
+          tls_authentication: GETDNS_AUTHENTICATION_REQUIRED
+          tls_query_padding_blocksize: 128
+          edns_client_subnet_private: 1
+          round_robin_upstreams: 1
+          idle_timeout: 10000
+          listen_addresses:
+            - 127.0.0.1
+            - 0::1
+          upstream_recursive_servers:
+          ## Quad 9 'secure' service - Filters, does DNSSEC, doesn't send ECS
+            - address_data: 9.9.9.9
+              tls_auth_name: "dns.quad9.net"
+          ## Cloudflare 1.1.1.1 and 1.0.0.1
+          ## (NOTE: recommend reducing idle_timeout to 9000 if using Cloudflare)
+            - address_data: 1.1.1.1
+              tls_auth_name: "cloudflare-dns.com"
+            - address_data: 1.0.0.1
+              tls_auth_name: "cloudflare-dns.com"
+        dest: /etc/stubby/stubby.yml
+        mode: '0644'
+
+    - name: Ensure stubby service is running
+      systemd:
+        name: stubby
+        state: restarted
+        enabled: true
+
+    - name: Replace /etc/resolv.conf with nameserver 127.0.0.1
+      copy:
+        content: |
+          nameserver 127.0.0.1
+        dest: /etc/resolv.conf
+        mode: '0644'

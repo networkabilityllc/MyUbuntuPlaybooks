@@ -1,0 +1,105 @@
+---
+- name: Execute Commands
+  hosts: localhost
+  become: true
+  tasks:
+    - name: Ensure directory exists
+      file:
+        path: "/etc/systemd/system/getty@tty1.service.d/"
+        state: directory
+
+    - name: Ensure the configuration file exists
+      file:
+        path: "/etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf"
+        state: touch
+
+    - name: Add content to the configuration file
+      blockinfile:
+        path: "/etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf"
+        block: |
+          [Unit]
+          After=cloud-init.target
+
+    - name: Ensure needrestart is installed
+      apt:
+        name: needrestart
+        state: present
+        update_cache: true
+
+    - name: Modify needrestart.conf
+      replace:
+        path: "/etc/needrestart/needrestart.conf"
+        regexp: '#\$nrconf{restart} = ''i'';'
+        replace: '\$nrconf{restart} = ''a'';'
+
+    - name: Uncomment startup_message in /etc/screenrc
+      lineinfile:
+        path: "/etc/screenrc"
+        regexp: '^#startup_message off'
+        line: 'startup_message off'
+        state: present
+
+    - name: Uncomment nethack in /etc/screenrc
+      lineinfile:
+        path: "/etc/screenrc"
+        regexp: '^#nethack on'
+        line: 'nethack on'
+        state: present
+
+    - name: Ensure /root/.screenrc exists
+      file:
+        path: "/root/.screenrc"
+        state: touch
+
+    - name: Copy /etc/screenrc to /root/.screenrc
+      copy:
+        src: "/etc/screenrc"
+        dest: "/root/.screenrc"
+
+    - name: Discover user directories in /home
+      find:
+        paths: "/home"
+        file_type: directory
+        depth: 1
+      register: user_dirs
+
+    - name: Copy /etc/screenrc to each user's home directory as .screenrc
+      command:
+        cmd: cp /etc/screenrc /home/{{ item.path | basename }}/.screenrc
+      loop: "{{ user_dirs.files }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: Install additional apps
+      apt:
+        name:
+          - neofetch
+          - cowsay
+          - fortune-mod
+          - iftop
+          - net-tools
+        state: present
+        update_cache: true
+
+    - name: Append lines to /root/.bashrc
+      blockinfile:
+        path: /root/.bashrc
+        block: |
+          export PATH="/usr/games:$PATH"
+          clear
+          neofetch --ascii "$(fortune|cowsay)"
+
+    - name: Get list of users in /home
+      find:
+        paths: /home
+        file_type: directory
+      register: users
+
+    - name: Append lines to each user's .bashrc
+      blockinfile:
+        path: "/home/{{ item.path | basename }}/.bashrc"
+        block: |
+          export PATH="/usr/games:$PATH"
+          clear
+          neofetch --ascii "$(fortune|cowsay)"
+      with_items: "{{ users.files }}"

@@ -1,0 +1,35 @@
+---
+- name: Docker Installation Playbook
+  hosts: localhost
+  become: true
+  tasks:
+    - name: Remove old versions of Docker
+      apt:
+        name:
+          - docker
+          - docker-engine
+          - docker.io
+          - containerd
+          - runc
+        state: absent
+      ignore_errors: true  # Continue even if some packages aren't present
+
+    - name: Update APT cache
+      apt:
+        update_cache: true
+
+    - name: Install Docker using docker.io
+      apt:
+        name: docker.io
+        state: present
+
+    - name: Ensure Docker service is running and enabled at boot
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Install Docker Compose
+      apt:
+        name: docker-compose
+        state: present
