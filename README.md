@@ -44,13 +44,26 @@ sudo git clone https://github.com/networkabilityllc/MyUbuntuPlaybooks.git
 
 ### Run the Playbooks
 
-**Navigate to the cloned repository and run the desired playbook. For example, to run configure_dns.yml:**
+**Navigate to the cloned repository and run the desired playbook. For example, to run update_new.yml:**
 
 ```
-cd MyUbuntuPlaybooks
+cd /ansible_scripts/MyUbuntuPlaybooks
 sudo ansible-playbook -i inventory update_new.yml
+```
+**To  run configure_dns.yml:**
+```
+cd /ansible_scripts/MyUbuntuPlaybooks
 sudo ansible-playbook -i inventory configure_dns.yml
+```
+**To run docker_install.yml:**
+```
+cd /ansible_scripts/MyUbuntuPlaybooks
 sudo ansible-playbook -i inventory docker_install.yml
+```
+
+```
+---
+
 ```
 
 ### Disclaimer
