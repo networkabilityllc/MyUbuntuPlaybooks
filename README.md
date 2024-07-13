@@ -40,9 +40,11 @@ sudo apt install ansible -y
 
 **Create the necessary directory and clone this repository:
 **
+```
 sudo mkdir /ansible_scripts
 cd /ansible_scripts
 sudo git clone https://github.com/networkabilityllc/MyUbuntuPlaybooks.git
+```
 
 Run the Playbooks
 
