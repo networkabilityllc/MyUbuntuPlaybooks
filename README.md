@@ -1,23 +1,19 @@
-This repository contains Ansible playbooks for setting up new Ubuntu VMs. These playbooks automate the process of configuring DNS, installing Docker, and updating the system with additional tools and configurations.
+This repository contains my highly opinionated and personalized Ansible playbooks for setting up new Ubuntu VMs. These playbooks automate the process of configuring DNS, installing Docker, and updating the system with additional tools and configurations.
 
-/**
- * Playbooks
- *
- * This file contains the documentation for the playbooks used in the project.
- */
 ## Playbooks
 
-1. **configure_dns.yml**: Configures DNS to use stubby with Cloudflare and Quad9 as the DNS over TLS providers.
+1. **configure_dns.yml**: 
     - Disables systemd-resolved
     - Installs and configures stubby
     - Replaces `/etc/resolv.conf` to use stubby for DNS resolution
+    - Configures DNS to use stubby with Cloudflare and Quad9 as the DNS over TLS providers.
 
-2. **docker_install.yml**: Installs Docker and Docker Compose on the system.
+2. **docker_install.yml**: 
     - Removes old versions of Docker
     - Installs Docker and Docker Compose
     - Ensures Docker service is running and enabled at boot
 
-3. **update_new.yml**: Executes various system updates and configurations.
+3. **update_new.yml**: 
     - Ensures specific directories and configuration files exist
     - Modifies needrestart configuration
     - Configures screenrc settings
