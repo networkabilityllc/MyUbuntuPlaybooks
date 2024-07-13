@@ -48,7 +48,7 @@ sudo git clone https://github.com/networkabilityllc/MyUbuntuPlaybooks.git
 
 ```
 cd MyUbuntuPlaybooks
-ansible-playbook -i localhost configure_dns.yml
+sudo ansible-playbook -i localhost configure_dns.yml
 ```
 
 ### Disclaimer
