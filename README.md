@@ -32,7 +32,6 @@ To use these playbooks, follow the instructions below:
 
 **First, install Ansible on your Ubuntu system:**
 ```
-bash
 sudo apt install ansible -y 
 ```
 
