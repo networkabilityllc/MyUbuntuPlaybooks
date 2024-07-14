@@ -1,0 +1,30 @@
+---
+- name: Install Portainer
+  hosts: localhost
+  become: true
+  tasks:
+    - name: Check if Docker is installed
+      command: docker --version
+      register: docker_installed
+      ignore_errors: yes
+
+    - name: Fail if Docker is not installed
+      fail:
+        msg: "Docker is not installed. Please install Docker before running this playbook."
+      when: docker_installed.failed
+
+    - name: Create Portainer data volume
+      command: sudo docker volume create portainer_data
+      when: not docker_installed.failed
+
+    - name: Run Portainer container
+      command: >
+        sudo docker run -d
+        -p 8000:8000
+        -p 9443:9443
+        --name portainer
+        --restart=always
+        -v /var/run/docker.sock:/var/run/docker.sock
+        -v portainer_data:/data
+        portainer/portainer-ce:latest
+      when: not docker_installed.failed
