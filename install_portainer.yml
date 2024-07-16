@@ -14,17 +14,21 @@
       when: docker_installed.failed
 
     - name: Create Portainer data volume
-      command: sudo docker volume create portainer_data
+      docker_volume:
+        name: portainer_data
+        state: present
       when: not docker_installed.failed
 
     - name: Run Portainer container
-      command: >
-        sudo docker run -d
-        -p 8000:8000
-        -p 9443:9443
-        --name portainer
-        --restart=always
-        -v /var/run/docker.sock:/var/run/docker.sock
-        -v portainer_data:/data
-        portainer/portainer-ce:latest
+      docker_container:
+        name: portainer
+        image: portainer/portainer-ce:latest
+        state: started
+        restart_policy: always
+        published_ports:
+          - "8000:8000"
+          - "9443:9443"
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+          - portainer_data:/data
       when: not docker_installed.failed
