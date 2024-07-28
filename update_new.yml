@@ -45,7 +45,7 @@
         regexp: '^#nethack on'
         line: 'nethack on'
         state: present
-    
+
     - name: Replace vbell_msg and add new lines in /etc/screenrc
       replace:
         path: "/etc/screenrc"
@@ -65,7 +65,15 @@
         src: "/etc/screenrc"
         dest: "/root/.screenrc"
 
-    - name: Discover user directories in /home
+    - name: Discover user directories in /home- name: Set ownership of .screenrc in user directories
+      file:
+        path: "/home/{{ item.path | basename }}/.screenrc"
+        owner: "{{ item.path | basename }}"
+        group: "{{ item.path | basename }}"
+        state: file
+      loop: "{{ user_dirs.files }}"
+      loop_control:
+        label: "{{ item.path }}"
       find:
         paths: "/home"
         file_type: directory
@@ -78,6 +86,7 @@
       loop: "{{ user_dirs.files }}"
       loop_control:
         label: "{{ item.path }}"
+
 
     - name: Install additional apps
       apt:
