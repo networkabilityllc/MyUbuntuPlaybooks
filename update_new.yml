@@ -65,6 +65,13 @@
         src: "/etc/screenrc"
         dest: "/root/.screenrc"
 
+    - name: Copy /etc/screenrc to each user's home directory as .screenrc
+      command:
+        cmd: cp /etc/screenrc /home/{{ item.path | basename }}/.screenrc
+      loop: "{{ user_dirs.files }}"
+      loop_control:
+        label: "{{ item.path }}"
+
     - name: Set ownership of .screenrc in user directories
       file:
         path: "/home/{{ item.path | basename }}/.screenrc"
@@ -74,14 +81,6 @@
       loop: "{{ user_dirs.files }}"
       loop_control:
         label: "{{ item.path }}"
-
-    - name: Copy /etc/screenrc to each user's home directory as .screenrc
-      command:
-        cmd: cp /etc/screenrc /home/{{ item.path | basename }}/.screenrc
-      loop: "{{ user_dirs.files }}"
-      loop_control:
-        label: "{{ item.path }}"
-
 
     - name: Install additional apps
       apt:
