@@ -79,17 +79,7 @@
       loop: "{{ user_dirs.files }}"
       loop_control:
         label: "{{ item.path }}"
-
-    - name: Set ownership of .screenrc in user directories
-      file:
-        path: "/home/{{ item.path | basename }}/.screenrc"
-        owner: "{{ item.path | basename }}"
-        group: "{{ item.path | basename }}"
-        state: file
-      loop: "{{ user_dirs.files }}"
-      loop_control:
-        label: "{{ item.path }}"
-
+    
     - name: Install additional apps
       apt:
         name:
@@ -102,6 +92,16 @@
         state: present
         update_cache: true
         install_recommends: true
+    
+    - name: Set ownership of .screenrc in user directories
+      file:
+        path: "/home/{{ item.path | basename }}/.screenrc"
+        owner: "{{ item.path | basename }}"
+        group: "{{ item.path | basename }}"
+        state: file
+      loop: "{{ user_dirs.files }}"
+      loop_control:
+        label: "{{ item.path }}"
 
     - name: Append lines to /root/.bashrc
       blockinfile:
