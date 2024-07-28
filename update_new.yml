@@ -30,7 +30,7 @@
       replace:
         path: "/etc/needrestart/needrestart.conf"
         regexp: '#\$nrconf{restart} = ''i'';'
-        replace: '\$nrconf{restart} = ''a'';'
+        replace: '$nrconf{restart} = ''a'';'
 
     - name: Uncomment startup_message in /etc/screenrc
       lineinfile:
