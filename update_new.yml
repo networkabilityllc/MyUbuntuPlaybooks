@@ -88,7 +88,8 @@
           - fortune-mod
           - iftop
           - net-tools
-          - linux-generic-hwe-22.04
+          - unzip
+          - build-essential
         state: present
         update_cache: true
         install_recommends: true
