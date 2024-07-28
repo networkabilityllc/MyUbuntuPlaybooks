@@ -45,6 +45,15 @@
         regexp: '^#nethack on'
         line: 'nethack on'
         state: present
+    
+    - name: Replace vbell_msg and add new lines in /etc/screenrc
+      replace:
+        path: "/etc/screenrc"
+        regexp: 'vbell_msg "   Wuff  ----  Wuff!!  "'
+        replace: |
+          vbell_msg ''
+          termcapinfo *  vb=:
+          altscreen on
 
     - name: Ensure /root/.screenrc exists
       file:
