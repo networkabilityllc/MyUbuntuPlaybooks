@@ -65,9 +65,17 @@
         src: "/etc/screenrc"
         dest: "/root/.screenrc"
 
+    - name: Discover user directories in /home
+      find:
+        paths: "/home"
+        file_type: directory
+        depth: 1
+      register: user_dirs
+
     - name: Copy /etc/screenrc to each user's home directory as .screenrc
-      command:
-        cmd: cp /etc/screenrc /home/{{ item.path | basename }}/.screenrc
+      copy:
+        src: "/etc/screenrc"
+        dest: "/home/{{ item.path | basename }}/.screenrc"
       loop: "{{ user_dirs.files }}"
       loop_control:
         label: "{{ item.path }}"
@@ -90,8 +98,10 @@
           - fortune-mod
           - iftop
           - net-tools
+          - linux-generic-hwe-22.04
         state: present
         update_cache: true
+        install_recommends: true
 
     - name: Append lines to /root/.bashrc
       blockinfile:
@@ -115,3 +125,11 @@
           clear
           neofetch --ascii "$(fortune|cowsay)"
       with_items: "{{ users.files }}"
+
+    - name: Print reboot notice
+      debug:
+        msg: |
+          =========================================================================
+          NOTICE: The system needs to be rebooted to apply the new kernel upgrade.
+          Please reboot the system at your earliest convenience.
+          =========================================================================
