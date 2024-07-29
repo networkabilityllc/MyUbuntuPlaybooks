@@ -79,7 +79,7 @@
       loop: "{{ user_dirs.files }}"
       loop_control:
         label: "{{ item.path }}"
-    
+
     - name: Install additional apps
       apt:
         name:
