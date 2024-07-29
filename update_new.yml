@@ -93,7 +93,7 @@
         state: present
         update_cache: true
         install_recommends: true
-    
+
     - name: Set ownership of .screenrc in user directories
       file:
         path: "/home/{{ item.path | basename }}/.screenrc"
@@ -126,11 +126,3 @@
           clear
           neofetch --ascii "$(fortune|cowsay)"
       with_items: "{{ users.files }}"
-
-    - name: Print reboot notice
-      debug:
-        msg: |
-          =========================================================================
-          NOTICE: The system needs to be rebooted to apply the new kernel upgrade.
-          Please reboot the system at your earliest convenience.
-          =========================================================================
