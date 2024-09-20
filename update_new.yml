@@ -29,6 +29,7 @@
           - net-tools
           - unzip
           - build-essential
+          - micro
         state: present
         update_cache: true
 
