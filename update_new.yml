@@ -3,7 +3,7 @@
   hosts: localhost
   become: true
   tasks:
-    - name: Ensure necessary directories and files exist
+    - name: Ensure necessary directories exist
       file:
         path: "{{ item }}"
         state: directory
@@ -11,7 +11,18 @@
         - "/etc/systemd/system/getty@tty1.service.d/"
         - "/root/.screenrc"
 
-    - name: Create configuration file with cloud-init wait configuration
+    - name: Check if cloud-init wait configuration file exists
+      stat:
+        path: "/etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf"
+      register: cloud_init_wait_file
+
+    - name: Create cloud-init wait configuration file if it doesn't exist
+      file:
+        path: "/etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf"
+        state: touch
+      when: cloud_init_wait_file.stat.exists == false
+
+    - name: Add cloud-init wait configuration
       blockinfile:
         path: "/etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf"
         block: |
