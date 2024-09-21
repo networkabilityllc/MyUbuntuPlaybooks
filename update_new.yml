@@ -112,6 +112,7 @@
           export PATH="/usr/games:$PATH"
           clear
           neofetch --ascii "$(fortune|cowsay)"
+          alias dfl='duf --only local'
       loop: "{{ user_dirs.files }}"
       loop_control:
         label: "{{ item.path }}"
