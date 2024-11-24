@@ -178,6 +178,43 @@
         environment:
           PATH: "/usr/bin:{{ ansible_env.PATH }}"
 
+      - name: Install quotes_library in virtual environment
+        command:
+          cmd: /home/{{ item.path | basename }}/myvenv/bin/pip install quotes-library
+        loop: "{{ user_dirs.files }}"
+        loop_control:
+          label: "{{ item.path }}"
+        become_user: "{{ item.path | basename }}"
+        environment:
+          PATH: "/usr/bin:{{ ansible_env.PATH }}"
+
+      - name: Create script directory
+        file:
+          path: "/home/{{ item.path | basename }}/myvenv/scripts"
+          state: directory
+          owner: "{{ item.path | basename }}"
+          group: "{{ item.path | basename }}"
+        loop: "{{ user_dirs.files }}"
+        loop_control:
+          label: "{{ item.path }}"
+
+      - name: Create randomquote.py script
+        copy:
+          dest: "/home/{{ item.path | basename }}/myvenv/scripts/randomquote.py"
+          content: |
+            from quotes_library import get_quotes
+            import random
+
+            quotes = get_quotes()
+            random_quote = random.choice(quotes['data'])
+            print(f"{random_quote['quote']} - {random_quote['author']}")
+          owner: "{{ item.path | basename }}"
+          group: "{{ item.path | basename }}"
+          mode: '0755'
+        loop: "{{ user_dirs.files }}"
+        loop_control:
+          label: "{{ item.path }}"
+
 
 # End of file
   
