@@ -157,4 +157,5 @@
           ip4 1.2.3.4/24 gw4 1.2.3.1
         args:
           creates: "/etc/NetworkManager/system-connections/fake.nmconnection"
+# End of file
   
