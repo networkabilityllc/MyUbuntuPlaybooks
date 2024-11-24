@@ -104,30 +104,7 @@
           group: root
           mode: '0755'
   
-      - name: Append custom commands to each user's .bashrc
-        blockinfile:
-          path: "/home/{{ item.path | basename }}/.bashrc"
-          block: |
-            # Added by Ansible
-            export PATH="/usr/games:$PATH"
-            clear
-            neofetch --ascii "$(fortune|cowsay)"
-            alias dfl='duf --only local'
-        loop: "{{ user_dirs.files }}"
-        loop_control:
-          label: "{{ item.path }}"
-  
-      - name: Append custom commands to root's .bashrc
-        blockinfile:
-          path: "/root/.bashrc"
-          block: |
-            # Added by Ansible
-            export PATH="/usr/games:$PATH"
-            clear
-            neofetch --ascii "$(fortune|cowsay)"
-            alias dfl='duf --only local'
-  
-      # === NetworkManager Configuration Tasks ===
+    # === NetworkManager Configuration Tasks ===
       - name: Ensure NetworkManager configuration directory exists
         file:
           path: "/etc/NetworkManager/conf.d"
