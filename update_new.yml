@@ -1,159 +1,160 @@
 ---
-- name: Execute Initial Setup Commands
-  hosts: localhost
-  become: true
-  tasks:
-    - name: Ensure necessary directories exist
-      file:
-        path: "{{ item }}"
-        state: directory
-      with_items:
-        - "/etc/systemd/system/getty@tty1.service.d/"
-        - "/root/.screenrc"
-
-    - name: Check if cloud-init wait configuration file exists
-      stat:
-        path: "/etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf"
-      register: cloud_init_wait_file
-
-    - name: Create cloud-init wait configuration file if it doesn't exist
-      file:
-        path: "/etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf"
-        state: touch
-      when: cloud_init_wait_file.stat.exists == false
-
-    - name: Add cloud-init wait configuration
-      blockinfile:
-        path: "/etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf"
-        block: |
-          [Unit]
-          After=cloud-init.target
-
-    - name: Install necessary packages
-      apt:
-        name:
-          - needrestart
-          - neofetch
-          - cowsay
-          - fortune-mod
-          - iftop
-          - net-tools
-          - unzip
-          - build-essential
-          - micro
-          - duf
-          - tldr
-        state: present
-        update_cache: true
-
-    - name: Modify needrestart.conf settings
-      replace:
-        path: "/etc/needrestart/needrestart.conf"
-        regexp: '#\$nrconf{restart} = ''i'';'
-        replace: '$nrconf{restart} = ''a'';'
-
-    - name: Customize /etc/screenrc and copy to user directories
-      blockinfile:
-        path: "/etc/screenrc"
-        block: |
-          startup_message off
-          nethack on
-          vbell_msg ''
-          termcapinfo *  vb=:
-          altscreen on
-
-    - name: Copy modified /etc/screenrc to /root/.screenrc
-      copy:
-        src: "/etc/screenrc"
-        dest: "/root/.screenrc"
-        remote_src: yes
-
-    - name: Get list of home directories
-      find:
-        paths: /home
-        file_type: directory
-        recurse: no
-      register: user_dirs
-
-    - name: Copy .screenrc to all home directories
-      copy:
-        src: "/etc/screenrc"
-        dest: "/home/{{ item.path | basename }}/.screenrc"
-        owner: "{{ item.path | basename }}"
-        group: "{{ item.path | basename }}"
-      loop: "{{ user_dirs.files }}"
-      loop_control:
-        label: "{{ item.path }}"
-
-    - name: Create .local/share directory for each user
-      file:
-        path: "/home/{{ item.path | basename }}/.local/share"
-        state: directory
-        owner: "{{ item.path | basename }}"
-        group: "{{ item.path | basename }}"
-        mode: '0755'
-      loop: "{{ user_dirs.files }}"
-      loop_control:
-        label: "{{ item.path }}"
-
-    - name: Create .local/share directory for root user
-      file:
-        path: "/root/.local/share"
-        state: directory
-        owner: root
-        group: root
-        mode: '0755'
-
-    - name: Append custom commands to each user's .bashrc
-      blockinfile:
-        path: "/home/{{ item.path | basename }}/.bashrc"
-        block: |
-          # Added by Ansible
-          export PATH="/usr/games:$PATH"
-          clear
-          neofetch --ascii "$(fortune|cowsay)"
-          alias dfl='duf --only local'
-      loop: "{{ user_dirs.files }}"
-      loop_control:
-        label: "{{ item.path }}"
-
-    - name: Append custom commands to root's .bashrc
-      blockinfile:
-        path: "/root/.bashrc"
-        block: |
-          # Added by Ansible
-          export PATH="/usr/games:$PATH"
-          clear
-          neofetch --ascii "$(fortune|cowsay)"
-          alias dfl='duf --only local'
-# === NetworkManager Configuration Tasks ===
-
-- name: Ensure NetworkManager configuration directory exists
-file:
-  path: "/etc/NetworkManager/conf.d"
-  state: directory
-  owner: root
-  group: root
-  mode: '0755'
-
-- name: Configure NetworkManager to manage all devices
-copy:
-  dest: /etc/NetworkManager/conf.d/10-globally-managed-devices.conf
-  content: |
-    [keyfile]
-    unmanaged-devices=none
-  owner: root
-  group: root
-  mode: '0644'
-
-- name: Reload NetworkManager to apply new configuration
-service:
-  name: NetworkManager
-  state: reloaded
-
-- name: Add dummy network connection if it does not exist
-command: >
-  nmcli con add type dummy con-name fake ifname fake0
-  ip4 1.2.3.4/24 gw4 1.2.3.1
-args:
-  creates: "/etc/NetworkManager/system-connections/fake.nmconnection"
+  - name: Execute Initial Setup Commands
+    hosts: localhost
+    become: true
+    tasks:
+      - name: Ensure necessary directories exist
+        file:
+          path: "{{ item }}"
+          state: directory
+        with_items:
+          - "/etc/systemd/system/getty@tty1.service.d/"
+          - "/root/.screenrc"
+  
+      - name: Check if cloud-init wait configuration file exists
+        stat:
+          path: "/etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf"
+        register: cloud_init_wait_file
+  
+      - name: Create cloud-init wait configuration file if it doesn't exist
+        file:
+          path: "/etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf"
+          state: touch
+        when: cloud_init_wait_file.stat.exists == false
+  
+      - name: Add cloud-init wait configuration
+        blockinfile:
+          path: "/etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf"
+          block: |
+            [Unit]
+            After=cloud-init.target
+  
+      - name: Install necessary packages
+        apt:
+          name:
+            - needrestart
+            - neofetch
+            - cowsay
+            - fortune-mod
+            - iftop
+            - net-tools
+            - unzip
+            - build-essential
+            - micro
+            - duf
+            - tldr
+          state: present
+          update_cache: true
+  
+      - name: Modify needrestart.conf settings
+        replace:
+          path: "/etc/needrestart/needrestart.conf"
+          regexp: '#\$nrconf{restart} = ''i'';'
+          replace: '$nrconf{restart} = ''a'';'
+  
+      - name: Customize /etc/screenrc and copy to user directories
+        blockinfile:
+          path: "/etc/screenrc"
+          block: |
+            startup_message off
+            nethack on
+            vbell_msg ''
+            termcapinfo *  vb=:
+            altscreen on
+  
+      - name: Copy modified /etc/screenrc to /root/.screenrc
+        copy:
+          src: "/etc/screenrc"
+          dest: "/root/.screenrc"
+          remote_src: yes
+  
+      - name: Get list of home directories
+        find:
+          paths: /home
+          file_type: directory
+          recurse: no
+        register: user_dirs
+  
+      - name: Copy .screenrc to all home directories
+        copy:
+          src: "/etc/screenrc"
+          dest: "/home/{{ item.path | basename }}/.screenrc"
+          owner: "{{ item.path | basename }}"
+          group: "{{ item.path | basename }}"
+        loop: "{{ user_dirs.files }}"
+        loop_control:
+          label: "{{ item.path }}"
+  
+      - name: Create .local/share directory for each user
+        file:
+          path: "/home/{{ item.path | basename }}/.local/share"
+          state: directory
+          owner: "{{ item.path | basename }}"
+          group: "{{ item.path | basename }}"
+          mode: '0755'
+        loop: "{{ user_dirs.files }}"
+        loop_control:
+          label: "{{ item.path }}"
+  
+      - name: Create .local/share directory for root user
+        file:
+          path: "/root/.local/share"
+          state: directory
+          owner: root
+          group: root
+          mode: '0755'
+  
+      - name: Append custom commands to each user's .bashrc
+        blockinfile:
+          path: "/home/{{ item.path | basename }}/.bashrc"
+          block: |
+            # Added by Ansible
+            export PATH="/usr/games:$PATH"
+            clear
+            neofetch --ascii "$(fortune|cowsay)"
+            alias dfl='duf --only local'
+        loop: "{{ user_dirs.files }}"
+        loop_control:
+          label: "{{ item.path }}"
+  
+      - name: Append custom commands to root's .bashrc
+        blockinfile:
+          path: "/root/.bashrc"
+          block: |
+            # Added by Ansible
+            export PATH="/usr/games:$PATH"
+            clear
+            neofetch --ascii "$(fortune|cowsay)"
+            alias dfl='duf --only local'
+  
+      # === NetworkManager Configuration Tasks ===
+      - name: Ensure NetworkManager configuration directory exists
+        file:
+          path: "/etc/NetworkManager/conf.d"
+          state: directory
+          owner: root
+          group: root
+          mode: '0755'
+  
+      - name: Configure NetworkManager to manage all devices
+        copy:
+          dest: /etc/NetworkManager/conf.d/10-globally-managed-devices.conf
+          content: |
+            [keyfile]
+            unmanaged-devices=none
+          owner: root
+          group: root
+          mode: '0644'
+  
+      - name: Reload NetworkManager to apply new configuration
+        service:
+          name: NetworkManager
+          state: reloaded
+  
+      - name: Add dummy network connection if it does not exist
+        command: >
+          nmcli con add type dummy con-name fake ifname fake0
+          ip4 1.2.3.4/24 gw4 1.2.3.1
+        args:
+          creates: "/etc/NetworkManager/system-connections/fake.nmconnection"
+  
