@@ -126,7 +126,7 @@
           clear
           neofetch --ascii "$(fortune|cowsay)"
           alias dfl='duf --only local'
-          
+
   - name: Ensure NetworkManager configuration directory exists
     file:
       path: "/etc/NetworkManager/conf.d"
@@ -145,24 +145,20 @@
       group: root
       mode: '0644'
 
-  - name: Restart NetworkManager to apply new configuration
-    service:
-      name: NetworkManager
-      state: restarted
-    notify:
-      - Restart NetworkManager
+- name: Restart NetworkManager to apply new configuration
+  service:
+    name: NetworkManager
+    state: restarted
 
-  - name: Add dummy network connection if it does not exist
-    nmcli:
-      conn_name: fake
-      ifname: fake0
-      type: dummy
-      ip4: 1.2.3.4/24
-      gw4: 1.2.3.1
-    register: nmcli_result
-    notify:
-      - Restart NetworkManager
-    when: nmcli_result is not defined or nmcli_result.rc != 0
+- name: Add dummy network connection if it does not exist
+  nmcli:
+    conn_name: fake
+    ifname: fake0
+    type: dummy
+    ip4: 1.2.3.4/24
+    gw4: 1.2.3.1
+  register: nmcli_result
+  when: nmcli_result is not defined or nmcli_result.rc != 0
 
 handlers:
   - name: Restart NetworkManager
