@@ -136,76 +136,124 @@
         args:
           creates: "/etc/NetworkManager/system-connections/fake.nmconnection"
 # Insert Python venv
-      - name: Create Python virtual environment for each user
-        file:
-          path: "/home/{{ item.path | basename }}/myvenv"
-          state: directory
-          owner: "{{ item.path | basename }}"
-          group: "{{ item.path | basename }}"
-        loop: "{{ user_dirs.files }}"
-        loop_control:
-          label: "{{ item.path }}"
+  - name: Create Python virtual environment for each user
+    file:
+      path: "/home/{{ item.path | basename }}/myvenv"
+      state: directory
+      owner: "{{ item.path | basename }}"
+      group: "{{ item.path | basename }}"
+    loop: "{{ user_dirs.files }}"
+    loop_control:
+      label: "{{ item.path }}"
 
-      - name: Create virtual environment
-        command:
-          cmd: python3 -m venv /home/{{ item.path | basename }}/myvenv
-        loop: "{{ user_dirs.files }}"
-        loop_control:
-          label: "{{ item.path }}"
-        become_user: "{{ item.path | basename }}"
-        environment:
-          PATH: "/usr/bin:{{ ansible_env.PATH }}"
+  - name: Create Python virtual environment for root
+    file:
+      path: "/root/myvenv"
+      state: directory
+      owner: root
+      group: root
+      mode: '0755'
 
-      - name: Install quotes_library in virtual environment
-        command:
-          cmd: /home/{{ item.path | basename }}/myvenv/bin/pip install quotes-library
-        loop: "{{ user_dirs.files }}"
-        loop_control:
-          label: "{{ item.path }}"
-        become_user: "{{ item.path | basename }}"
-        environment:
-          PATH: "/usr/bin:{{ ansible_env.PATH }}"
+  - name: Create virtual environment for each user
+    command:
+      cmd: python3 -m venv /home/{{ item.path | basename }}/myvenv
+    loop: "{{ user_dirs.files }}"
+    loop_control:
+      label: "{{ item.path }}"
+    become_user: "{{ item.path | basename }}"
+    environment:
+      PATH: "/usr/bin:{{ ansible_env.PATH }}"
 
-      - name: Create script directory
-        file:
-          path: "/home/{{ item.path | basename }}/myvenv/scripts"
-          state: directory
-          owner: "{{ item.path | basename }}"
-          group: "{{ item.path | basename }}"
-        loop: "{{ user_dirs.files }}"
-        loop_control:
-          label: "{{ item.path }}"
+  - name: Create virtual environment for root
+    command:
+      cmd: python3 -m venv /root/myvenv
 
-      - name: Create randomquote.py script
-        copy:
-          dest: "/home/{{ item.path | basename }}/myvenv/scripts/randomquote.py"
-          content: |
-            from quotes_library import get_quotes
-            import random
+  - name: Install quotes_library in virtual environment for each user
+    command:
+      cmd: /home/{{ item.path | basename }}/myvenv/bin/pip install quotes-library
+    loop: "{{ user_dirs.files }}"
+    loop_control:
+      label: "{{ item.path }}"
+    become_user: "{{ item.path | basename }}"
+    environment:
+      PATH: "/usr/bin:{{ ansible_env.PATH }}"
 
-            quotes = get_quotes()
-            random_quote = random.choice(quotes['data'])
-            print(f"{random_quote['quote']} - {random_quote['author']}")
-          owner: "{{ item.path | basename }}"
-          group: "{{ item.path | basename }}"
-          mode: '0755'
-        loop: "{{ user_dirs.files }}"
-        loop_control:
-          label: "{{ item.path }}"
-      - name: Append custom commands to each user's .bashrc for Python-based random quote
-        blockinfile:
-          path: "/home/{{ item.path | basename }}/.bashrc"
-          block: |
-            # Added by Ansible for Random Quotes
-            export PATH="/usr/games:$PATH"
-            clear
-            neofetch --ascii "$(~/myvenv/bin/python3 ~/myvenv/scripts/randomquote.py | cowsay)"
-            alias dfl='duf --only local'
-          owner: "{{ item.path | basename }}"
-          group: "{{ item.path | basename }}"
-        loop: "{{ user_dirs.files }}"
-        loop_control:
-          label: "{{ item.path }}"
+  - name: Install quotes_library in virtual environment for root
+    command:
+      cmd: /root/myvenv/bin/pip install quotes-library
 
-# End of file
+  - name: Create script directory for each user
+    file:
+      path: "/home/{{ item.path | basename }}/myvenv/scripts"
+      state: directory
+      owner: "{{ item.path | basename }}"
+      group: "{{ item.path | basename }}"
+    loop: "{{ user_dirs.files }}"
+    loop_control:
+      label: "{{ item.path }}"
+
+  - name: Create script directory for root
+    file:
+      path: "/root/myvenv/scripts"
+      state: directory
+      owner: root
+      group: root
+      mode: '0755'
+
+  - name: Create randomquote.py script for each user
+    copy:
+      dest: "/home/{{ item.path | basename }}/myvenv/scripts/randomquote.py"
+      content: |
+        from quotes_library import get_quotes
+        import random
+
+        quotes = get_quotes()
+        random_quote = random.choice(quotes['data'])
+        print(f"{random_quote['quote']} - {random_quote['author']}")
+      owner: "{{ item.path | basename }}"
+      group: "{{ item.path | basename }}"
+      mode: '0755'
+    loop: "{{ user_dirs.files }}"
+    loop_control:
+      label: "{{ item.path }}"
+
+  - name: Create randomquote.py script for root
+    copy:
+      dest: "/root/myvenv/scripts/randomquote.py"
+      content: |
+        from quotes_library import get_quotes
+        import random
+
+        quotes = get_quotes()
+        random_quote = random.choice(quotes['data'])
+        print(f"{random_quote['quote']} - {random_quote['author']}")
+      owner: root
+      group: root
+      mode: '0755'
+
+  - name: Append custom commands to each user's .bashrc for Python-based random quote
+    blockinfile:
+      path: "/home/{{ item.path | basename }}/.bashrc"
+      block: |
+        # Added by Ansible for Random Quotes
+        export PATH="/usr/games:$PATH"
+        clear
+        neofetch --ascii "$(~/myvenv/bin/python3 ~/myvenv/scripts/randomquote.py | cowsay)"
+        alias dfl='duf --only local'
+      owner: "{{ item.path | basename }}"
+      group: "{{ item.path | basename }}"
+    loop: "{{ user_dirs.files }}"
+    loop_control:
+      label: "{{ item.path }}"
+
+  - name: Append custom commands to root's .bashrc for Python-based random quote
+    blockinfile:
+      path: "/root/.bashrc"
+      block: |
+        # Added by Ansible for Random Quotes
+        export PATH="/usr/games:$PATH"
+        clear
+        neofetch --ascii "$(~/myvenv/bin/python3 ~/myvenv/scripts/randomquote.py | cowsay)"
+        alias dfl='duf --only local'
+# End of Python venv
   
