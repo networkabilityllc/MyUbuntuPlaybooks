@@ -137,9 +137,9 @@
     mode: '0755'
 
 - name: Configure NetworkManager to manage all devices
-copy:
-  dest: /etc/NetworkManager/conf.d/10-globally-managed-devices.conf
-  content: |
+  copy:
+    dest: /etc/NetworkManager/conf.d/10-globally-managed-devices.conf
+    content: |
     [keyfile]
     unmanaged-devices=none
   owner: root
