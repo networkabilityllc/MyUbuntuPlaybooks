@@ -141,7 +141,7 @@
     dest: /etc/NetworkManager/conf.d/10-globally-managed-devices.conf
     content: |
     [keyfile]
-    unmanaged-devices=none
+      unmanaged-devices=none
   owner: root
   group: root
   mode: '0644'
