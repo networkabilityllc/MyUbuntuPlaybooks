@@ -126,6 +126,7 @@
           clear
           neofetch --ascii "$(fortune|cowsay)"
           alias dfl='duf --only local'
+          
   - name: Ensure NetworkManager configuration directory exists
     file:
       path: "/etc/NetworkManager/conf.d"
