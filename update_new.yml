@@ -200,22 +200,28 @@
           group: root
           mode: '0755'
 
-      - name: Create randomquote.py script for each user
-        copy:
-          dest: "/home/{{ item.path | basename }}/myvenv/scripts/randomquote.py"
-          content: |
-            from quotes_library import get_quotes
-            import random
+  - name: Create randomquote.py script
+    copy:
+      dest: "/home/{{ item.path | basename }}/myvenv/scripts/randomquote.py"
+      content: |
+        from quotes_library import get_quotes
 
-            quotes = get_quotes()
-            random_quote = random.choice(quotes['data'])
+        # Fetch a truly random quote
+        quotes = get_quotes(category='', count=1, random=True)
+
+        # Check if a quote was retrieved
+        if quotes and 'data' in quotes and len(quotes['data']) > 0:
+            random_quote = quotes['data'][0]  # Get the first quote from the returned data
             print(f"{random_quote['quote']} - {random_quote['author']}")
-          owner: "{{ item.path | basename }}"
-          group: "{{ item.path | basename }}"
-          mode: '0755'
-        loop: "{{ user_dirs.files }}"
-        loop_control:
-          label: "{{ item.path }}"
+        else:
+            print("No quotes were found. Please check the category or parameters.")
+      owner: "{{ item.path | basename }}"
+      group: "{{ item.path | basename }}"
+      mode: '0755'
+    loop: "{{ user_dirs.files }}"
+    loop_control:
+      label: "{{ item.path }}"
+
 
       - name: Create randomquote.py script for root
         copy:
