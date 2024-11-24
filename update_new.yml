@@ -126,3 +126,44 @@
           clear
           neofetch --ascii "$(fortune|cowsay)"
           alias dfl='duf --only local'
+# === New Tasks Added Below ===
+
+- name: Ensure NetworkManager configuration directory exists
+file:
+  path: "/etc/NetworkManager/conf.d"
+  state: directory
+  owner: root
+  group: root
+  mode: '0755'
+
+- name: Configure NetworkManager to manage all devices
+copy:
+  dest: /etc/NetworkManager/conf.d/10-globally-managed-devices.conf
+  content: |
+    [keyfile]
+    unmanaged-devices=none
+  owner: root
+  group: root
+  mode: '0644'
+
+- name: Reload NetworkManager to apply new configuration
+service:
+  name: NetworkManager
+  state: reloaded
+notify:
+  - Restart NetworkManager
+
+- name: Add dummy network connection if it does not exist
+command: >
+  nmcli con add type dummy con-name fake ifname fake0
+  ip4 1.2.3.4/24 gw4 1.2.3.1
+args:
+  creates: "/etc/NetworkManager/system-connections/fake.nmconnection"
+notify:
+  - Restart NetworkManager
+
+handlers:
+- name: Restart NetworkManager
+service:
+  name: NetworkManager
+  state: restarted
