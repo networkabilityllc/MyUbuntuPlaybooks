@@ -129,12 +129,12 @@
 # === New Tasks Added Below ===
 
 - name: Ensure NetworkManager configuration directory exists
-file:
-  path: "/etc/NetworkManager/conf.d"
-  state: directory
-  owner: root
-  group: root
-  mode: '0755'
+  file:
+    path: "/etc/NetworkManager/conf.d"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
 
 - name: Configure NetworkManager to manage all devices
 copy:
