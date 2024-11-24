@@ -36,7 +36,7 @@
             - neofetch
             - cowsay
             - fortune-mod
-            - python3.12-venv
+            - python3-venv
             - iftop
             - net-tools
             - unzip
