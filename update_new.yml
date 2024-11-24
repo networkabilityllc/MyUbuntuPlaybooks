@@ -214,7 +214,20 @@
         loop: "{{ user_dirs.files }}"
         loop_control:
           label: "{{ item.path }}"
-
+    - name: Append custom commands to each user's .bashrc for Python-based random quote
+      blockinfile:
+        path: "/home/{{ item.path | basename }}/.bashrc"
+        block: |
+          # Added by Ansible for Random Quotes
+          export PATH="/usr/games:$PATH"
+          clear
+          neofetch --ascii "$(~/myvenv/bin/python3 ~/myvenv/scripts/randomquote.py | cowsay)"
+          alias dfl='duf --only local'
+        owner: "{{ item.path | basename }}"
+        group: "{{ item.path | basename }}"
+      loop: "{{ user_dirs.files }}"
+      loop_control:
+        label: "{{ item.path }}"
 
 # End of file
   
