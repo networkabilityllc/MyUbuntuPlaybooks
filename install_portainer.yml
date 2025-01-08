@@ -25,7 +25,9 @@
         tag: latest
         state: present
         force_pull: yes
+        source: pull
       when: not docker_installed.failed
+
 
     - name: Run Portainer container
       docker_container:
