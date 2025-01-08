@@ -24,7 +24,7 @@
         name: portainer/portainer-ce
         tag: latest
         state: present
-        force_pull: yes
+        pull: yes
         source: pull
       when: not docker_installed.failed
 
