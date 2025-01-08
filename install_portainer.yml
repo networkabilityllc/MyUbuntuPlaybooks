@@ -19,20 +19,10 @@
         state: present
       when: not docker_installed.failed
 
-    - name: Pull the latest Portainer image
-      docker_image:
-        name: portainer/portainer-ce
-        tag: latest
-        state: present
-        pull: yes
-        source: pull
-      when: not docker_installed.failed
-
-
     - name: Run Portainer container
       docker_container:
         name: portainer
-        image: portainer/portainer-ce:latest
+        image: portainer/portainer-ce:2.25.1
         state: started
         restart_policy: always
         published_ports:
