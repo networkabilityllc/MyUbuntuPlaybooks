@@ -1,42 +1,42 @@
-This repository contains my highly opinionated and personalized Ansible playbooks for setting up new Ubuntu VMs. These playbooks automate the process of configuring DNS, installing Docker, and updating the system with additional tools and configurations.
+# My Ubuntu Ansible Playbooks
+
+This repository contains my highly opinionated and personalized Ansible playbooks for setting up new Ubuntu VMs. These playbooks automate DNS setup, Docker installation, and system customization with additional tools and configurations.
+
+> **:warning: WARNING: These playbooks are for reference only and should _not_ be used in a production environment under any circumstances. Use at your own risk!**
+
+These work nicely for me, but review and adapt them carefully before use.
 
 ## Playbooks
 
-1. **configure_dns.yml**: 
-    - Disables systemd-resolved
-    - Installs and configures stubby
-    - Replaces `/etc/resolv.conf` to use stubby for DNS resolution
-    - Configures DNS to use stubby with Cloudflare and Quad9 as the DNS over TLS providers.
+1. **configure_dns.yml**  
+    - Disables `systemd-resolved`  
+    - Installs and configures Stubby as a DNS-over-TLS resolver  
+    - Replaces `/etc/resolv.conf`  
+    - Uses Cloudflare and Quad9 DNS providers  
 
-2. **docker_install.yml**: 
-    - Removes old versions of Docker
-    - Installs Docker and Docker Compose
-    - Ensures Docker service is running and enabled at boot
+2. **docker_install.yml**  
+    - Removes legacy Docker versions  
+    - Installs Docker and Docker Compose  
+    - Ensures Docker is enabled and running at boot  
 
-3. **update_new.yml**: 
-    - Ensures specific directories and configuration files exist
-    - Modifies needrestart configuration
-    - Configures screenrc settings
-    - Installs additional applications (neofetch, cowsay, fortune-mod, iftop, net-tools)
-    - Appends custom commands to `.bashrc` for root and users in `/home`
+3. **update_new.yml**  
+    - Ensures cloud-init service waits are respected by TTY  
+    - Installs additional CLI tools (`neofetch`, `cowsay`, `fortune-mod`, `iftop`, `micro`, `duf`, etc.)  
+    - Modifies `needrestart.conf` to auto-restart updated services  
+    - Applies a custom `.screenrc` to root and all `/home` users  
+    - Appends a personalized MOTD block to `.bashrc` with ASCII output  
 
 ## Usage
 
-To use these playbooks, follow the instructions below:
-
 ### Install Ansible
 
-**First, install Ansible on your Ubuntu system:**
+```bash
+sudo apt install ansible -y
 ```
-sudo apt install ansible -y 
-```
 
+### Set Up Directories and Clone Repository
 
-### Set Up Directories and Clone Repository**
-
-**Create the necessary directory and clone this repository:**
-
-```
+```bash
 sudo mkdir /ansible_scripts
 cd /ansible_scripts
 sudo git clone https://github.com/networkabilityllc/MyUbuntuPlaybooks.git
@@ -44,48 +44,27 @@ sudo git clone https://github.com/networkabilityllc/MyUbuntuPlaybooks.git
 
 ### Run the Playbooks
 
-**Navigate to the cloned repository and run the desired playbook. For example, to run update_new.yml:**
-
-```
+```bash
 cd /ansible_scripts/MyUbuntuPlaybooks
 sudo ansible-playbook -i inventory update_new.yml
 ```
-**To  run configure_dns.yml:**
-```
-cd /ansible_scripts/MyUbuntuPlaybooks
+
+To run `configure_dns.yml`:
+```bash
 sudo ansible-playbook -i inventory configure_dns.yml
 ```
-**To run docker_install.yml:**
-```
-cd /ansible_scripts/MyUbuntuPlaybooks
+
+To run `docker_install.yml`:
+```bash
 sudo ansible-playbook -i inventory docker_install.yml
 ```
 
 ---
 
-### Disclaimer
+## Disclaimer
 
-These playbooks are provided as-is without any warranty. Use them at your own risk. Ensure you understand what each playbook does before running it on your system. The authors are not responsible for any damage or data loss that may occur from using these playbooks.
-License
+These playbooks are provided as-is, without any warranty. Use at your own risk. Review each task before running it on production systems.
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+## License
 
-MIT License
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+This project is licensed under the MIT License. See the `LICENSE` file for details.
