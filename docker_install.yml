@@ -1,5 +1,5 @@
 ---
-- name: Docker Installation Playbook
+- name: "Docker Installation Playbook"
   hosts: localhost
   become: true
   tasks:
