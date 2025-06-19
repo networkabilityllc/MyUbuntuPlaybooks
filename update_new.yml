@@ -1,228 +1,134 @@
 ---
-  - name: Execute Initial Setup Commands
-    hosts: localhost
-    become: true
-    tasks:
-      - name: Ensure necessary directories exist
-        file:
-          path: "{{ item }}"
-          state: directory
-        with_items:
-          - "/etc/systemd/system/getty@tty1.service.d/"
-          - "/root/.screenrc"
-  
-      - name: Check if cloud-init wait configuration file exists
-        stat:
-          path: "/etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf"
-        register: cloud_init_wait_file
-  
-      - name: Create cloud-init wait configuration file if it doesn't exist
-        file:
-          path: "/etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf"
-          state: touch
-        when: cloud_init_wait_file.stat.exists == false
-  
-      - name: Add cloud-init wait configuration
-        blockinfile:
-          path: "/etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf"
-          block: |
-            [Unit]
-            After=cloud-init.target
-  
-      - name: Install necessary packages
-        apt:
-          name:
-            - needrestart
-            - neofetch
-            - cowsay
-            - fortune-mod
-            - python3-venv
-            - iftop
-            - net-tools
-            - unzip
-            - build-essential
-            - micro
-            - duf
-            - tldr
-          state: present
-          update_cache: true
-  
-      - name: Modify needrestart.conf settings
-        replace:
-          path: "/etc/needrestart/needrestart.conf"
-          regexp: '#\$nrconf{restart} = ''i'';'
-          replace: '$nrconf{restart} = ''a'';'
-  
-      - name: Customize /etc/screenrc and copy to user directories
-        blockinfile:
-          path: "/etc/screenrc"
-          block: |
-            startup_message off
-            nethack on
-            vbell_msg ''
-            termcapinfo *  vb=:
-            altscreen on
-  
-      - name: Copy modified /etc/screenrc to /root/.screenrc
-        copy:
-          src: "/etc/screenrc"
-          dest: "/root/.screenrc"
-          remote_src: yes
-  
-      - name: Get list of home directories
-        find:
-          paths: /home
-          file_type: directory
-          recurse: no
-        register: user_dirs
-  
-      - name: Copy .screenrc to all home directories
-        copy:
-          src: "/etc/screenrc"
-          dest: "/home/{{ item.path | basename }}/.screenrc"
-          owner: "{{ item.path | basename }}"
-          group: "{{ item.path | basename }}"
-        loop: "{{ user_dirs.files }}"
-        loop_control:
-          label: "{{ item.path }}"
-  
-      - name: Create .local/share directory for each user
-        file:
-          path: "/home/{{ item.path | basename }}/.local/share"
-          state: directory
-          owner: "{{ item.path | basename }}"
-          group: "{{ item.path | basename }}"
-          mode: '0755'
-        loop: "{{ user_dirs.files }}"
-        loop_control:
-          label: "{{ item.path }}"
-  
-      - name: Create .local/share directory for root user
-        file:
-          path: "/root/.local/share"
-          state: directory
-          owner: root
-          group: root
-          mode: '0755'
-  # Insert Python venv
-      - name: Create Python virtual environment for each user
-        file:
-          path: "/home/{{ item.path | basename }}/myvenv"
-          state: directory
-          owner: "{{ item.path | basename }}"
-          group: "{{ item.path | basename }}"
-        loop: "{{ user_dirs.files }}"
-        loop_control:
-          label: "{{ item.path }}"
+- name: Execute Initial Setup Commands
+  hosts: localhost
+  become: true
+  tasks:
+    - name: Ensure necessary directories exist
+      file:
+        path: "{{ item }}"
+        state: directory
+      loop:
+        - "/etc/systemd/system/getty@tty1.service.d/"
 
-      - name: Create Python virtual environment for root
-        file:
-          path: "/root/myvenv"
-          state: directory
-          owner: root
-          group: root
-          mode: '0755'
+    - name: Check if cloud-init wait configuration file exists
+      stat:
+        path: "/etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf"
+      register: cloud_init_wait_file
 
-      - name: Create virtual environment for each user
-        command:
-          cmd: python3 -m venv /home/{{ item.path | basename }}/myvenv
-        loop: "{{ user_dirs.files }}"
-        loop_control:
-          label: "{{ item.path }}"
-        become_user: "{{ item.path | basename }}"
-        environment:
-          PATH: "/usr/bin:{{ ansible_env.PATH }}"
+    - name: Create cloud-init wait configuration file if it doesn't exist
+      file:
+        path: "/etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf"
+        state: touch
+      when: not cloud_init_wait_file.stat.exists
 
-      - name: Create virtual environment for root
-        command:
-          cmd: python3 -m venv /root/myvenv
+    - name: Add cloud-init wait configuration
+      blockinfile:
+        path: "/etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf"
+        block: |
+          [Unit]
+          After=cloud-init.target
 
-      - name: Install quotes_library in virtual environment for each user
-        command:
-          cmd: /home/{{ item.path | basename }}/myvenv/bin/pip install quotes-library
-        loop: "{{ user_dirs.files }}"
-        loop_control:
-          label: "{{ item.path }}"
-        become_user: "{{ item.path | basename }}"
-        environment:
-          PATH: "/usr/bin:{{ ansible_env.PATH }}"
+    - name: Install necessary packages
+      apt:
+        name:
+          - needrestart
+          - neofetch
+          - cowsay
+          - fortune-mod
+          - python3-venv
+          - iftop
+          - net-tools
+          - unzip
+          - build-essential
+          - micro
+          - duf
+          - tldr
+        state: present
+        update_cache: true
 
-      - name: Install quotes_library in virtual environment for root
-        command:
-          cmd: /root/myvenv/bin/pip install quotes-library
+    - name: Ensure needrestart.conf restart setting is set to 'a'
+      lineinfile:
+        path: "/etc/needrestart/needrestart.conf"
+        regexp: '^\s*\$nrconf{restart}\s*='
+        line: "$nrconf{restart} = 'a';"
+        state: present
+        backrefs: yes
 
-      - name: Create script directory for each user
-        file:
-          path: "/home/{{ item.path | basename }}/myvenv/scripts"
-          state: directory
-          owner: "{{ item.path | basename }}"
-          group: "{{ item.path | basename }}"
-        loop: "{{ user_dirs.files }}"
-        loop_control:
-          label: "{{ item.path }}"
+    - name: Customize /etc/screenrc and copy to user directories
+      blockinfile:
+        path: "/etc/screenrc"
+        block: |
+          startup_message off
+          nethack on
+          vbell_msg ''
+          termcapinfo *  vb=:
+          altscreen on
 
-      - name: Create script directory for root
-        file:
-          path: "/root/myvenv/scripts"
-          state: directory
-          owner: root
-          group: root
-          mode: '0755'
+    - name: Copy modified /etc/screenrc to /root/.screenrc
+      copy:
+        src: "/etc/screenrc"
+        dest: "/root/.screenrc"
+        remote_src: yes
 
-      - name: Create randomquote.py script for each user
-        copy:
-          dest: "/home/{{ item.path | basename }}/myvenv/scripts/randomquote.py"
-          content: |
-            from quotes_library import get_quotes
-            import random
+    - name: Get list of home directories
+      find:
+        paths: /home
+        file_type: directory
+        recurse: no
+      register: user_dirs
 
-            quotes = get_quotes()
-            random_quote = random.choice(quotes['data'])
-            print(f"{random_quote['quote']} - {random_quote['author']}")
-          owner: "{{ item.path | basename }}"
-          group: "{{ item.path | basename }}"
-          mode: '0755'
-        loop: "{{ user_dirs.files }}"
-        loop_control:
-          label: "{{ item.path }}"
+    - name: Copy .screenrc to all home directories
+      copy:
+        src: "/etc/screenrc"
+        dest: "/home/{{ item.path | basename }}/.screenrc"
+        owner: "{{ item.path | basename }}"
+        group: "{{ item.path | basename }}"
+      loop: "{{ user_dirs.files }}"
+      loop_control:
+        label: "{{ item.path }}"
 
-      - name: Create randomquote.py script for root
-        copy:
-          dest: "/root/myvenv/scripts/randomquote.py"
-          content: |
-            from quotes_library import get_quotes
-            import random
+    - name: Create .local/share directory for each user
+      file:
+        path: "/home/{{ item.path | basename }}/.local/share"
+        state: directory
+        owner: "{{ item.path | basename }}"
+        group: "{{ item.path | basename }}"
+        mode: '0755'
+      loop: "{{ user_dirs.files }}"
+      loop_control:
+        label: "{{ item.path }}"
 
-            quotes = get_quotes()
-            random_quote = random.choice(quotes['data'])
-            print(f"{random_quote['quote']} - {random_quote['author']}")
-          owner: root
-          group: root
-          mode: '0755'
+    - name: Create .local/share directory for root user
+      file:
+        path: "/root/.local/share"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
 
-      - name: Append custom commands to each user's .bashrc for Python-based random quote
-        blockinfile:
-          path: "/home/{{ item.path | basename }}/.bashrc"
-          block: |
-            # Added by Ansible for Random Quotes
-            export PATH="/usr/games:$PATH"
-            clear
-            neofetch --ascii "$(~/myvenv/bin/python3 ~/myvenv/scripts/randomquote.py | cowsay)"
-            alias dfl='duf --only local'
-          owner: "{{ item.path | basename }}"
-          group: "{{ item.path | basename }}"
-        loop: "{{ user_dirs.files }}"
-        loop_control:
-          label: "{{ item.path }}"
+    - name: Append custom commands to each user's .bashrc
+      blockinfile:
+        path: "/home/{{ item.path | basename }}/.bashrc"
+        block: |
+          # Added by Ansible for MOTD
+          export PATH="/usr/games:$PATH"
+          clear
+          neofetch --ascii "$(fortune | cowsay)"
+          alias dfl='duf --only local'
+        owner: "{{ item.path | basename }}"
+        group: "{{ item.path | basename }}"
+      loop: "{{ user_dirs.files }}"
+      loop_control:
+        label: "{{ item.path }}"
 
-      - name: Append custom commands to root's .bashrc for Python-based random quote
-        blockinfile:
-          path: "/root/.bashrc"
-          block: |
-            # Added by Ansible for Random Quotes
-            export PATH="/usr/games:$PATH"
-            clear
-            neofetch --ascii "$(~/myvenv/bin/python3 ~/myvenv/scripts/randomquote.py | cowsay)"
-            alias dfl='duf --only local'
-# End of Python venv
-  
+    - name: Append custom commands to root's .bashrc
+      blockinfile:
+        path: "/root/.bashrc"
+        block: |
+          # Added by Ansible for MOTD
+          export PATH="/usr/games:$PATH"
+          clear
+          neofetch --ascii "$(fortune | cowsay)"
+          alias dfl='duf --only local'
+        owner: root
+        group: root
