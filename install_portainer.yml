@@ -22,7 +22,7 @@
         - name: Run Portainer container
           docker_container:
             name: portainer
-            image: portainer/portainer-ce:2.25.1
+            image: portainer/portainer-ce:2.33.0
             state: started
             restart_policy: always
             published_ports:
