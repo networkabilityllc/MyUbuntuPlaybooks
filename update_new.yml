@@ -24,6 +24,8 @@
     - name: Add cloud-init wait configuration
       blockinfile:
         path: "/etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf"
+        create: yes
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - cloud-init wait"
         block: |
           [Unit]
           After=cloud-init.target
@@ -54,9 +56,11 @@
         state: present
         backrefs: yes
 
-    - name: Customize /etc/screenrc and copy to user directories
+    - name: Customize /etc/screenrc
       blockinfile:
         path: "/etc/screenrc"
+        create: yes
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - screenrc"
         block: |
           startup_message off
           nethack on
@@ -109,12 +113,22 @@
     - name: Append custom commands to each user's .bashrc
       blockinfile:
         path: "/home/{{ item.path | basename }}/.bashrc"
+        create: yes
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - MOTD + fzf helper"
         block: |
           # Added by Ansible for MOTD
           export PATH="/usr/games:$PATH"
           clear
           neofetch --ascii "$(fortune | cowsay)"
           alias dfl='duf --only local'
+
+          # fzf + nano helper
+          fz () {
+            local dir="${1:-.}"
+            local file
+            file=$(find "$dir" -type f 2>/dev/null | fzf --preview 'bat --style=plain --color=always {}') || return
+            sudo nano "$file"
+          }
         owner: "{{ item.path | basename }}"
         group: "{{ item.path | basename }}"
       loop: "{{ user_dirs.files }}"
@@ -124,11 +138,21 @@
     - name: Append custom commands to root's .bashrc
       blockinfile:
         path: "/root/.bashrc"
+        create: yes
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - MOTD + fzf helper"
         block: |
           # Added by Ansible for MOTD
           export PATH="/usr/games:$PATH"
           clear
           neofetch --ascii "$(fortune | cowsay)"
           alias dfl='duf --only local'
+
+          # fzf + nano helper
+          fz () {
+            local dir="${1:-.}"
+            local file
+            file=$(find "$dir" -type f 2>/dev/null | fzf --preview 'bat --style=plain --color=always {}') || return
+            sudo nano "$file"
+          }
         owner: root
         group: root
