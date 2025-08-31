@@ -45,6 +45,9 @@
           - micro
           - duf
           - tldr
+          - fzf
+          - bat
+          - fd-find
         state: present
         update_cache: true
 
@@ -121,6 +124,10 @@
           clear
           neofetch --ascii "$(fortune | cowsay)"
           alias dfl='duf --only local'
+          alias bat="batcat"
+          alias fd="fdfind"
+          export FZF_DEFAULT_COMMAND='fd --type f'
+          export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 
           # fzf + nano helper
           fz () {
@@ -146,6 +153,10 @@
           clear
           neofetch --ascii "$(fortune | cowsay)"
           alias dfl='duf --only local'
+          alias bat="batcat"
+          alias fd="fdfind"
+          export FZF_DEFAULT_COMMAND='fd --type f'
+          export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 
           # fzf + nano helper
           fz () {
