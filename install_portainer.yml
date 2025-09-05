@@ -3,6 +3,11 @@
   hosts: localhost
   become: true
   tasks:
+    - name: Ensure Docker SDK for Python is installed
+      package:
+        name: python3-docker
+        state: present
+
     - name: Check if Docker is installed
       command: docker --version
       register: docker_installed
@@ -19,19 +24,21 @@
             name: portainer_data
             state: present
 
-        - name: Run Portainer container
+        - name: Run Portainer
           community.docker.docker_container:
             name: portainer
-            image: portainer/portainer-ce:2.33.1
-            image_name_mismatch: recreate   # prevent deprecation warning
-            pull: yes                       # always pull latest matching tag
+            image: portainer/portainer-ce:lts
             state: started
             restart_policy: always
-            published_ports:
+            pull: true
+            recreate: true
+            comparisons:
+              image: strict
+            container_default_behavior: compatibility
+            ports:
               - "8000:8000"
               - "9443:9443"
             volumes:
               - /var/run/docker.sock:/var/run/docker.sock
               - portainer_data:/data
       when: not docker_installed.failed
-
