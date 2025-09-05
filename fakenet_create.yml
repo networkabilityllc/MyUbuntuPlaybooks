@@ -1,22 +1,20 @@
 ---
-- name: Create Cockpit Dummy Interface
-  hosts: localhost
+- name: Create dummy network interface with nmcli
+  hosts: all
   become: true
   tasks:
-    - name: Ensure NetworkManager present
+
+    - name: Ensure NetworkManager is installed
       apt:
         name: network-manager
         state: present
         update_cache: true
 
-    - name: Ensure fake dummy interface exists
+    - name: Add dummy interface using nmcli
       command: >
-        nmcli con add type dummy ifname cockpit0 con-name cockpit
-        ipv4.method manual ipv4.addresses 192.0.2.2/32
-        ipv4.never-default yes ipv6.method ignore
+        nmcli con add type dummy con-name fake ifname fake0 ip4 192.0.2.2/32
       args:
-        creates: /etc/NetworkManager/system-connections/cockpit.nmconnection
+        creates: /etc/NetworkManager/system-connections/fake.nmconnection
 
-    - name: Bring up fake dummy interface
-      command: >
-        nmcli con up cockpit
+    - name: Bring up the dummy interface
+      command: nmcli con up fake
