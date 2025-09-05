@@ -51,6 +51,8 @@
           - fzf
           - bat
           - fd-find
+          - libpam-modules        # added
+          - libpam-modules-bin    # added
         state: present
         update_cache: true
 
