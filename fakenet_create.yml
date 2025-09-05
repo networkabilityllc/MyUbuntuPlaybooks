@@ -12,7 +12,7 @@
 
     - name: Add dummy interface using nmcli
       command: >
-        nmcli con add type dummy con-name fake ifname fake0 ip4 192.0.2.2/32
+        nmcli con add type dummy con-name fake ifname fake0 ip4 192.0.2.2/28 gw4 192.0.2.1
       args:
         creates: /etc/NetworkManager/system-connections/fake.nmconnection
 
