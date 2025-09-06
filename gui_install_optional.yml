@@ -1,0 +1,30 @@
+---
+- name: Install minimal Ubuntu desktop environment
+  hosts: "{{ target_hosts | default('localhost') }}"
+  become: true
+  connection: local
+
+  tasks:
+    - name: Ensure APT cache is updated
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install minimal Ubuntu desktop
+      apt:
+        name:
+          - ubuntu-desktop-minimal
+          - gnome-terminal
+          - gdm3
+          - xinit
+          - firefox
+        state: present
+
+    - name: Enable graphical target by default
+      systemd:
+        name: graphical.target
+        enabled: true
+
+    - name: Set system to boot into graphical target
+      command: systemctl set-default graphical.target
+      changed_when: false
