@@ -23,4 +23,7 @@
         pre_reboot_delay: 5
         post_reboot_delay: 10
         reboot_timeout: 600
+      delegate_to: localhost
+
+
 
