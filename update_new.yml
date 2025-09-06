@@ -28,7 +28,7 @@
         marker: "# {mark} ANSIBLE MANAGED BLOCK - cloud-init wait"
         block: |
           [Unit]
-          After=cloud-init.target
+          After=cloud-final.service
 
     - name: Install necessary packages
       apt:
