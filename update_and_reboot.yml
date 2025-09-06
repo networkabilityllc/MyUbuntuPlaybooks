@@ -1,29 +1,39 @@
 ---
-- name: System upgrade and reboot
+# Adapted from an original example by Vivek Gite (nixCraft)
+# Source: https://www.cyberciti.biz/faq/ansible-reboot-debian-ubuntu-linux-for-kernel-update-waitforit/
+- name: System upgrade and conditional reboot
   hosts: "{{ target_hosts | default('localhost') }}"
   become: true
   connection: local
 
   tasks:
-    - name: Update APT cache
+    - name: Update all packages (dist upgrade)
       apt:
-        update_cache: true
-        cache_valid_time: 3600
-
-    - name: Perform full system upgrade
-      apt:
-        # 'dist' performs a full upgrade, including kernel and major system packages
+        update_cache: yes
         upgrade: dist
         autoremove: yes
         autoclean: yes
 
-    - name: Reboot after upgrade
-      reboot:
-        msg: "Rebooting after full system upgrade"
-        pre_reboot_delay: 5
-        post_reboot_delay: 10
-        reboot_timeout: 600
-      delegate_to: localhost
+    - name: Reboot if required
+      shell: sleep 10 && /sbin/shutdown -r now 'Rebooting after upgrade'
+      args:
+        removes: /var/run/reboot-required
+      async: 300
+      poll: 0
+      ignore_errors: true
+
+    - name: Wait for system to become reachable again
+      wait_for_connection:
+        delay: 60
+        timeout: 300
+
+    - name: Display kernel version
+      command: uname -mrs
+      register: uname_result
+
+    - debug:
+        var: uname_result.stdout_lines
+
 
 
 
