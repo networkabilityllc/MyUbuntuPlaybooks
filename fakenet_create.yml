@@ -1,20 +1,43 @@
 ---
-- name: Create dummy network interface with nmcli
+- name: Manage only fake0 with NetworkManager
   hosts: all
   become: true
-  tasks:
 
+  tasks:
     - name: Ensure NetworkManager is installed
       apt:
         name: network-manager
         state: present
         update_cache: true
 
-    - name: Add dummy interface using nmcli
+    - name: Make NM ignore all devices except fake0
+      copy:
+        dest: /etc/NetworkManager/conf.d/90-unmanaged.conf
+        content: |
+          [main]
+          unmanaged-devices=*,except:interface-name:fake0
+      notify: Restart NetworkManager
+
+    - name: Add dummy connection for fake0
       command: >
         nmcli con add type dummy con-name fake ifname fake0 ip4 192.0.2.2/28 gw4 192.0.2.1
       args:
         creates: /etc/NetworkManager/system-connections/fake.nmconnection
+      notify: Restart NetworkManager
 
-    - name: Bring up the dummy interface
+    - name: Reload NM connection cache
+      command: nmcli connection reload
+      changed_when: false
+
+    - name: Bring up fake0 (retry until NM picks it up)
       command: nmcli con up fake
+      register: nm_up
+      until: nm_up.rc == 0
+      retries: 10
+      delay: 2
+
+  handlers:
+    - name: Restart NetworkManager
+      service:
+        name: NetworkManager
+        state: restarted
