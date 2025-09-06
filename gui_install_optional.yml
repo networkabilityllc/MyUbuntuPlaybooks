@@ -18,6 +18,7 @@
           - gdm3
           - xinit
           - firefox
+          - xrdp
         state: present
 
     - name: Enable graphical target by default
