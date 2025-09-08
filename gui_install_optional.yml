@@ -1,5 +1,5 @@
 ---
-- name: Install minimal Ubuntu desktop environment
+- name: Install LXQt desktop with base apps
   hosts: "{{ target_hosts | default('localhost') }}"
   become: true
   connection: local
@@ -10,15 +10,20 @@
         update_cache: yes
         cache_valid_time: 3600
 
-    - name: Install minimal Ubuntu desktop
+    - name: Install LXQt desktop environment and base applications
       apt:
         name:
-          - ubuntu-desktop-minimal
-          - gnome-terminal
-          - gdm3
-          - xinit
-          - firefox
-          - xrdp
+          - lxqt-core           # Minimal LXQt environment
+          - lightdm             # Lightweight display manager
+          - lxqt-panel          # Panel/taskbar
+          - lxqt-session        # Session manager
+          - lxqt-runner         # Application launcher
+          - pcmanfm-qt          # File manager
+          - lxqt-policykit      # PolicyKit integration
+          - lxqt-sudo           # GUI sudo
+          - lxterminal          # Terminal emulator
+          - firefox             # Browser
+          - xrdp                # RDP access
         state: present
 
     - name: Enable graphical target by default
