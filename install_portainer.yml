@@ -32,7 +32,6 @@
             restart_policy: always
             pull: true
             recreate: true
-            image_name_mismatch: recreate
             comparisons:
               image: strict
             container_default_behavior: compatibility
