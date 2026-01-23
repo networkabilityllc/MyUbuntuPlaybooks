@@ -3,16 +3,23 @@
   hosts: localhost
   become: true
   tasks:
-    - name: Disable systemd-resolved
+    - name: Check if systemd-resolved exists
+      stat:
+        path: /lib/systemd/system/systemd-resolved.service
+      register: resolved_unit
+
+    - name: Disable systemd-resolved (if present)
       systemd:
         name: systemd-resolved
         enabled: false
         state: stopped
+      when: resolved_unit.stat.exists
 
     - name: Remove /etc/resolv.conf if it exists
       file:
         path: /etc/resolv.conf
         state: absent
+
 
     - name: Create interim /etc/resolv.conf with nameserver 1.1.1.1
       copy:
