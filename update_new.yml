@@ -23,7 +23,7 @@
       apt:
         name:
           - needrestart
-          - neofetch
+          - fastfetch
           - cowsay
           - fortune-mod
           - python3
@@ -116,7 +116,7 @@
           # Added by Ansible for MOTD
           export PATH="/usr/games:$PATH"
           clear
-          neofetch --ascii "$(fortune | cowsay)"
+          fastfetch
           alias dfl='duf --only local'
           alias bat="batcat"
           alias fd="fdfind"
@@ -146,7 +146,7 @@
           # Added by Ansible for MOTD
           export PATH="/usr/games:$PATH"
           clear
-          neofetch --ascii "$(fortune | cowsay)"
+          fastfetch
           alias dfl='duf --only local'
           alias bat="batcat"
           alias fd="fdfind"
