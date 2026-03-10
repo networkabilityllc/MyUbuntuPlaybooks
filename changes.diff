@@ -1,0 +1,128 @@
+diff --git a/configure_dns.yml b/configure_dns.yml
+index cbac147..cc6591c 100644
+--- a/configure_dns.yml
++++ b/configure_dns.yml
+@@ -34,13 +34,9 @@
+         state: present
+         update_cache: true
+ 
+-    - name: Backup existing stubby.yml
+-      command: mv /etc/stubby/stubby.yml /etc/stubby/stubby.yml.bak
+-      args:
+-        removes: /etc/stubby/stubby.yml
+-
+-    - name: Create new stubby.yml configuration
++    - name: Create new stubby.yml configuration (backs up existing file automatically)
+       copy:
++        backup: true
+         content: |
+           resolution_type: GETDNS_RESOLUTION_STUB
+           dns_transport_list:
+diff --git a/gui_install_optional.yml b/gui_install_optional.yml
+index b346ab0..0950019 100644
+--- a/gui_install_optional.yml
++++ b/gui_install_optional.yml
+@@ -2,12 +2,11 @@
+ - name: Install LXQt desktop with base apps
+   hosts: "{{ target_hosts | default('localhost') }}"
+   become: true
+-  connection: local
+ 
+   tasks:
+     - name: Ensure APT cache is updated
+       apt:
+-        update_cache: yes
++        update_cache: true
+         cache_valid_time: 3600
+ 
+     - name: Install LXQt desktop environment and base applications
+@@ -31,6 +30,11 @@
+         name: graphical.target
+         enabled: true
+ 
++    - name: Get current default systemd target
++      command: systemctl get-default
++      register: current_default
++      changed_when: false
++
+     - name: Set system to boot into graphical target
+       command: systemctl set-default graphical.target
+-      changed_when: false
++      when: current_default.stdout != 'graphical.target'
+diff --git a/install_portainer.yml b/install_portainer.yml
+index 275e9f9..89b4e9f 100644
+--- a/install_portainer.yml
++++ b/install_portainer.yml
+@@ -11,7 +11,7 @@
+     - name: Check if Docker is installed
+       command: docker --version
+       register: docker_installed
+-      ignore_errors: yes
++      ignore_errors: true
+ 
+     - name: Fail if Docker is not installed
+       fail:
+diff --git a/update_and_reboot.yml b/update_and_reboot.yml
+index cdb6023..0be011f 100644
+--- a/update_and_reboot.yml
++++ b/update_and_reboot.yml
+@@ -9,18 +9,20 @@
+   tasks:
+     - name: Update all packages (dist upgrade)
+       apt:
+-        update_cache: yes
++        update_cache: true
+         upgrade: dist
+-        autoremove: yes
+-        autoclean: yes
++        autoremove: true
++        autoclean: true
++
++    - name: Check if reboot is required
++      stat:
++        path: /var/run/reboot-required
++      register: reboot_required_file
+ 
+     - name: Reboot if required
+-      shell: sleep 10 && /sbin/shutdown -r now 'Rebooting after upgrade'
+-      args:
+-        removes: /var/run/reboot-required
+-      async: 300
+-      poll: 0
+-      ignore_errors: true
++      reboot:
++        msg: 'Rebooting after upgrade'
++      when: reboot_required_file.stat.exists
+ 
+     - name: Display kernel version
+       command: uname -mrs
+diff --git a/update_new.yml b/update_new.yml
+index e318534..0484e31 100644
+--- a/update_new.yml
++++ b/update_new.yml
+@@ -10,17 +10,6 @@
+       loop:
+         - "/etc/systemd/system/getty@tty1.service.d/"
+ 
+-    - name: Check if cloud-init wait configuration file exists
+-      stat:
+-        path: "/etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf"
+-      register: cloud_init_wait_file
+-
+-    - name: Create cloud-init wait configuration file if it doesn't exist
+-      file:
+-        path: "/etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf"
+-        state: touch
+-      when: not cloud_init_wait_file.stat.exists
+-
+     - name: Add cloud-init wait configuration
+       blockinfile:
+         path: "/etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf"
+@@ -161,6 +150,7 @@
+           alias dfl='duf --only local'
+           alias bat="batcat"
+           alias fd="fdfind"
++          alias apb="ansible-playbook"
+           export FZF_DEFAULT_COMMAND='fd --type f'
+           export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+ 

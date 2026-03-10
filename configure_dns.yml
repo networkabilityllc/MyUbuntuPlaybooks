@@ -34,13 +34,9 @@
         state: present
         update_cache: true
 
-    - name: Backup existing stubby.yml
-      command: mv /etc/stubby/stubby.yml /etc/stubby/stubby.yml.bak
-      args:
-        removes: /etc/stubby/stubby.yml
-
-    - name: Create new stubby.yml configuration
+    - name: Create new stubby.yml configuration (backs up existing file automatically)
       copy:
+        backup: true
         content: |
           resolution_type: GETDNS_RESOLUTION_STUB
           dns_transport_list:
