@@ -19,6 +19,11 @@
           [Unit]
           After=cloud-final.service
 
+    - name: Add fastfetch PPA
+      ansible.builtin.apt_repository:
+        repo: ppa:zhangsongcui3371/fastfetch
+        state: present
+
     - name: Install necessary packages
       apt:
         name:
