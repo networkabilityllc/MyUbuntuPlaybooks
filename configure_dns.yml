@@ -62,7 +62,7 @@
     - name: Ensure stubby service is running
       systemd:
         name: stubby
-        state: restarted
+        state: started
         enabled: true
 
     - name: Replace /etc/resolv.conf with nameserver 127.0.0.1
