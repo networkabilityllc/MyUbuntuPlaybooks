@@ -19,16 +19,10 @@
           [Unit]
           After=cloud-final.service
 
-    - name: Add fastfetch PPA
-      ansible.builtin.apt_repository:
-        repo: ppa:zhangsongcui3371/fastfetch
-        state: present
-
     - name: Install necessary packages
       apt:
         name:
           - needrestart
-          - fastfetch
           - cowsay
           - fortune-mod
           - python3
@@ -49,6 +43,23 @@
           - libpam-modules-bin    # added
         state: present
         update_cache: true
+
+    - name: Get latest fastfetch release info
+      uri:
+        url: https://api.github.com/repos/fastfetch-cli/fastfetch/releases/latest
+        return_content: true
+      register: fastfetch_release
+
+    - name: Download fastfetch deb package
+      get_url:
+        url: "{{ (fastfetch_release.json.assets | selectattr('name', 'search', 'linux-amd64\\.deb') | list | first).browser_download_url }}"
+        dest: /tmp/fastfetch.deb
+        mode: '0644'
+
+    - name: Install fastfetch from deb
+      apt:
+        deb: /tmp/fastfetch.deb
+        state: present
 
     - name: Ensure needrestart.conf restart setting is set to 'a'
       lineinfile:
