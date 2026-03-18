@@ -80,6 +80,10 @@
           vbell_msg ''
           termcapinfo *  vb=:
           altscreen on
+          
+          # Enable arrow keys for shell history navigation
+          bindkey -k up send-up
+          bindkey -k dn send-down
 
     - name: Copy modified /etc/screenrc to /root/.screenrc
       copy:
@@ -100,6 +104,101 @@
         dest: "/home/{{ item.path | basename }}/.screenrc"
         owner: "{{ item.path | basename }}"
         group: "{{ item.path | basename }}"
+      loop: "{{ user_dirs.files }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: Create .inputrc for root user
+      copy:
+        dest: "/root/.inputrc"
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
+          # Completion settings
+          set completion-ignore-case on
+          set show-all-if-ambiguous on
+          set show-all-if-unmodified on
+
+          # Completion display improvements
+          set completion-display-width 0
+          set colored-completion-prefix on
+          set colored-stats on
+          set menu-complete-display-prefix on
+
+          # Editing improvements
+          set enable-bracketed-paste-mode on
+          set enable-keypad on
+          set visible-stats on
+
+          # History settings
+          set history-preserve-point on
+          set history-size 10000
+
+          # Filtered history search (Alt+Up/Down for commands starting with typed text)
+          "\e[1;3A": history-search-backward
+          "\e[1;3B": history-search-forward
+
+          # Standard bindings
+          # Ctrl+Left/Right for word navigation
+          "\e[1;5C": forward-word
+          "\e[1;5D": backward-word
+
+          # Home/End for line navigation
+          "\e[H": beginning-of-line
+          "\e[F": end-of-line
+
+          # Delete key
+          "\e[3~": delete-char
+
+          # Helpful completions
+          set match-hidden-files on
+
+    - name: Create .inputrc for all home directories
+      copy:
+        dest: "/home/{{ item.path | basename }}/.inputrc"
+        owner: "{{ item.path | basename }}"
+        group: "{{ item.path | basename }}"
+        mode: '0644'
+        content: |
+          # Completion settings
+          set completion-ignore-case on
+          set show-all-if-ambiguous on
+          set show-all-if-unmodified on
+
+          # Completion display improvements
+          set completion-display-width 0
+          set colored-completion-prefix on
+          set colored-stats on
+          set menu-complete-display-prefix on
+
+          # Editing improvements
+          set enable-bracketed-paste-mode on
+          set enable-keypad on
+          set visible-stats on
+
+          # History settings
+          set history-preserve-point on
+          set history-size 10000
+
+          # Filtered history search (Alt+Up/Down for commands starting with typed text)
+          "\e[1;3A": history-search-backward
+          "\e[1;3B": history-search-forward
+
+          # Standard bindings
+          # Ctrl+Left/Right for word navigation
+          "\e[1;5C": forward-word
+          "\e[1;5D": backward-word
+
+          # Home/End for line navigation
+          "\e[H": beginning-of-line
+          "\e[F": end-of-line
+
+          # Delete key
+          "\e[3~": delete-char
+
+          # Helpful completions
+          set match-hidden-files on
       loop: "{{ user_dirs.files }}"
       loop_control:
         label: "{{ item.path }}"
