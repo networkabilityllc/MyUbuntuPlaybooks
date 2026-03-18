@@ -260,7 +260,8 @@
           # Added by Ansible for MOTD
           export PATH="/usr/games:$PATH"
           clear
-          fastfetch
+          fastfetch --logo none
+          echo
           alias dfl='duf --only local'
           alias bat="batcat"
           alias fd="fdfind"
