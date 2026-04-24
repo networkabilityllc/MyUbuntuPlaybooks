@@ -37,7 +37,7 @@ sudo apt install ansible -y
 ### Set Up Directories and Clone Repository
 
 ```bash
-sudo mkdir /ansible_scripts
+sudo mkdir -p /ansible_scripts
 cd /ansible_scripts
 sudo git clone https://github.com/networkabilityllc/MyUbuntuPlaybooks.git
 ```
