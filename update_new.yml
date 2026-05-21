@@ -44,6 +44,7 @@
         state: present
         update_cache: true
         cache_valid_time: 3600
+
     - name: Get latest fastfetch release info
       uri:
         url: https://api.github.com/repos/fastfetch-cli/fastfetch/releases/latest
@@ -64,7 +65,7 @@
           {{
            (
             fastfetch_release.json.assets
-            | selectattr('name', 'search', 'amd64.*\\.deb')
+            | selectattr('name', 'contains', 'amd64.deb')
             | map(attribute='browser_download_url')
             | first
           ) | default('')
