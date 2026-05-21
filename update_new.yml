@@ -266,7 +266,7 @@
           alias bat="batcat"
           alias fd="fdfind"
           alias apb="ansible-playbook"
-          export FZF_DEFAULT_COMMAND='fd --type f'
+          export FZF_DEFAULT_COMMAND='fdfind --type f'
           export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 
           # fzf shell key bindings
@@ -306,7 +306,7 @@
           alias bat="batcat"
           alias fd="fdfind"
           alias apb="ansible-playbook"
-          export FZF_DEFAULT_COMMAND='fd --type f'
+          export FZF_DEFAULT_COMMAND='fdfind --type f'
           export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 
           # fzf shell key bindings
@@ -330,7 +330,7 @@
         owner: root
         group: root
         mode: '0755'
-            
+
     - name: Configure journald size and retention limits
       copy:
         dest: /etc/systemd/journald.conf.d/99-limits.conf
