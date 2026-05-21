@@ -342,3 +342,10 @@
           SystemMaxUse=200M
           SystemKeepFree=500M
           MaxRetentionSec=14day
+    - name: Disable cloud-init after provisioning
+      file:
+        path: /etc/cloud/cloud-init.disabled
+        state: touch
+        owner: root
+        group: root
+        mode: '0644'      
