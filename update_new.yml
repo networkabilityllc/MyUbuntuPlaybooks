@@ -63,12 +63,12 @@
       set_fact:
         fastfetch_deb_url: >-
           {{
-           (
-            fastfetch_release.json.assets
-            | selectattr('name', 'contains', 'amd64.deb')
-            | map(attribute='browser_download_url')
-            | first
-          ) | default('')
+            (
+              fastfetch_release.json.assets
+              | selectattr('name', 'contains', 'amd64.deb')
+              | map(attribute='browser_download_url')
+              | first
+            ) | default('')
           }}
 
     - name: Fail if fastfetch deb asset not found
@@ -255,15 +255,24 @@
         block: |
           # Added by Ansible for MOTD
           export PATH="/usr/games:$PATH"
-          clear
-          fastfetch --logo none
-          echo
+
+          if [[ $- == *i* ]]; then
+              clear
+              fastfetch --logo none
+              echo
+          fi
+
           alias dfl='duf --only local'
           alias bat="batcat"
           alias fd="fdfind"
           alias apb="ansible-playbook"
-          export FZF_DEFAULT_COMMAND='fd --type f'  
+          export FZF_DEFAULT_COMMAND='fd --type f'
           export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+
+          # fzf shell key bindings
+          if [ -r /usr/share/doc/fzf/examples/key-bindings.bash ]; then
+              source /usr/share/doc/fzf/examples/key-bindings.bash
+          fi
 
           # fzf + nano helper
           fz () {
@@ -286,15 +295,24 @@
         block: |
           # Added by Ansible for MOTD
           export PATH="/usr/games:$PATH"
-          clear
-          fastfetch --logo none
-          echo
+
+          if [[ $- == *i* ]]; then
+              clear
+              fastfetch --logo none
+              echo
+          fi
+
           alias dfl='duf --only local'
           alias bat="batcat"
           alias fd="fdfind"
           alias apb="ansible-playbook"
           export FZF_DEFAULT_COMMAND='fd --type f'
           export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+
+          # fzf shell key bindings
+          if [ -r /usr/share/doc/fzf/examples/key-bindings.bash ]; then
+              source /usr/share/doc/fzf/examples/key-bindings.bash
+          fi
 
           # fzf + nano helper
           fz () {
