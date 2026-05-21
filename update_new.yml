@@ -300,7 +300,7 @@
           fz () {
             local dir="${1:-.}"
             local file
-            file=$(find "$dir" -type f 2>/dev/null | fzf --preview 'bat --style=plain --color=always {}') || return
+            file=$(find "$dir" -type f 2>/dev/null | fzf --preview 'batcat --style=plain --color=always {}') || return
             sudo nano "$file"
           }
         owner: root
