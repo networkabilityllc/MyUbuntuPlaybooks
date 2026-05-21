@@ -64,7 +64,7 @@
           {{
            (
             fastfetch_release.json.assets
-            | selectattr('name', 'search', 'linux-amd64\\.deb')
+            | selectattr('name', 'search', 'amd64.*\\.deb')
             | map(attribute='browser_download_url')
             | first
           ) | default('')
