@@ -43,16 +43,41 @@
           - libpam-modules-bin    # added
         state: present
         update_cache: true
-
+        cache_valid_time: 3600
     - name: Get latest fastfetch release info
       uri:
         url: https://api.github.com/repos/fastfetch-cli/fastfetch/releases/latest
         return_content: true
+        headers:
+          Accept: application/vnd.github+json
+          User-Agent: ansible-cloud-init
+        status_code: 200
+        timeout: 30
       register: fastfetch_release
+      retries: 5
+      delay: 10
+      until: fastfetch_release.status == 200
+    
+    - name: Find fastfetch deb asset
+      set_fact:
+        fastfetch_deb_url: >-
+          {{
+           (
+            fastfetch_release.json.assets
+            | selectattr('name', 'search', 'linux-amd64\\.deb')
+            | map(attribute='browser_download_url')
+            | first
+          ) | default('')
+          }}
+
+    - name: Fail if fastfetch deb asset not found
+      fail:
+        msg: "Could not locate fastfetch linux-amd64 deb asset in GitHub release."
+      when: fastfetch_deb_url == ''
 
     - name: Download fastfetch deb package
       get_url:
-        url: "{{ (fastfetch_release.json.assets | selectattr('name', 'search', 'linux-amd64\\.deb') | list | first).browser_download_url }}"
+        url: "{{ fastfetch_deb_url }}"
         dest: /tmp/fastfetch.deb
         mode: '0644'
 
@@ -61,13 +86,14 @@
         deb: /tmp/fastfetch.deb
         state: present
 
-    - name: Ensure needrestart.conf restart setting is set to 'a'
+    - name: Ensure needrestart auto-restarts services
       lineinfile:
-        path: "/etc/needrestart/needrestart.conf"
-        regexp: '^\s*\$nrconf{restart}\s*='
+        path: /etc/needrestart/needrestart.conf
+        regexp: '^\s*#?\s*\$nrconf\{restart\}\s*='
         line: "$nrconf{restart} = 'a';"
         state: present
-        backrefs: yes
+        create: yes
+        backup: yes
 
     - name: Customize /etc/screenrc
       blockinfile:
@@ -242,7 +268,7 @@
           fz () {
             local dir="${1:-.}"
             local file
-            file=$(find "$dir" -type f 2>/dev/null | fzf --preview 'bat --style=plain --color=always {}') || return
+            file=$(find "$dir" -type f 2>/dev/null | fzf --preview 'batcat --style=plain --color=always {}') || return
             sudo nano "$file"
           }
         owner: "{{ item.path | basename }}"
