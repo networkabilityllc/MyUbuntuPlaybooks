@@ -323,6 +323,14 @@
           }
         owner: root
         group: root
+    - name: Ensure journald drop-in directory exists
+      file:
+        path: /etc/systemd/journald.conf.d
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+            
     - name: Configure journald size and retention limits
       copy:
         dest: /etc/systemd/journald.conf.d/99-limits.conf
