@@ -323,3 +323,14 @@
           }
         owner: root
         group: root
+    - name: Configure journald size and retention limits
+      copy:
+        dest: /etc/systemd/journald.conf.d/99-limits.conf
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
+          [Journal]
+          SystemMaxUse=200M
+          SystemKeepFree=500M
+          MaxRetentionSec=14day
