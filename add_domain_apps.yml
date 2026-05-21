@@ -1,0 +1,27 @@
+---
+- name: Install packages required for Ubuntu AD domain membership
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Install domain join and Samba/SSSD packages
+      apt:
+        name:
+          - realmd
+          - sssd
+          - sssd-tools
+          - libnss-sss
+          - libpam-sss
+          - adcli
+          - samba-common-bin
+          - samba-libs
+          - krb5-user
+          - packagekit
+          - oddjob
+          - oddjob-mkhomedir
+          - policykit-1
+          - chrony
+          - dnsutils
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
