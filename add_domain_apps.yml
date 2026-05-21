@@ -15,6 +15,7 @@
           - adcli
           - samba-common-bin
           - samba-libs
+          - smbclient
           - krb5-user
           - packagekit
           - oddjob
