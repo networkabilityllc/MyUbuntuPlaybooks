@@ -2,25 +2,27 @@
 - name: Execute Initial Setup Commands
   hosts: localhost
   become: true
+  gather_facts: true
+
   tasks:
     - name: Ensure necessary directories exist
-      file:
+      ansible.builtin.file:
         path: "{{ item }}"
         state: directory
       loop:
-        - "/etc/systemd/system/getty@tty1.service.d/"
+        - /etc/systemd/system/getty@tty1.service.d/
 
     - name: Add cloud-init wait configuration
-      blockinfile:
-        path: "/etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf"
-        create: yes
+      ansible.builtin.blockinfile:
+        path: /etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf
+        create: true
         marker: "# {mark} ANSIBLE MANAGED BLOCK - cloud-init wait"
         block: |
           [Unit]
           After=cloud-final.service
 
     - name: Install necessary packages
-      apt:
+      ansible.builtin.apt:
         name:
           - needrestart
           - cowsay
@@ -35,71 +37,97 @@
           - build-essential
           - micro
           - duf
-          - tldr
+          # tldr disabled for now; Debian/RPi package availability differs from Ubuntu.
+          # - tldr
           - fzf
           - bat
           - fd-find
-          - libpam-modules        # added
-          - libpam-modules-bin    # added
+          - libpam-modules
+          - libpam-modules-bin
         state: present
         update_cache: true
         cache_valid_time: 3600
 
-    - name: Get latest fastfetch release info
-      uri:
-        url: https://api.github.com/repos/fastfetch-cli/fastfetch/releases/latest
-        return_content: true
-        headers:
-          Accept: application/vnd.github+json
-          User-Agent: ansible-cloud-init
-        status_code: 200
-        timeout: 30
-      register: fastfetch_release
-      retries: 5
-      delay: 10
-      until: fastfetch_release.status == 200
-    
-    - name: Find fastfetch deb asset
-      set_fact:
-        fastfetch_deb_url: >-
-          {{
-            (
-              fastfetch_release.json.assets
-              | selectattr('name', 'contains', 'amd64.deb')
-              | map(attribute='browser_download_url')
-              | first
-            ) | default('')
-          }}
-
-    - name: Fail if fastfetch deb asset not found
-      fail:
-        msg: "Could not locate fastfetch linux-amd64 deb asset in GitHub release."
-      when: fastfetch_deb_url == ''
-
-    - name: Download fastfetch deb package
-      get_url:
-        url: "{{ fastfetch_deb_url }}"
-        dest: /tmp/fastfetch.deb
-        mode: '0644'
-
-    - name: Install fastfetch from deb
-      apt:
-        deb: /tmp/fastfetch.deb
+    - name: Try installing fastfetch from distro repo
+      ansible.builtin.apt:
+        name: fastfetch
         state: present
+        update_cache: true
+        cache_valid_time: 3600
+      register: fastfetch_repo_install
+      ignore_errors: true
+
+    - name: Install fastfetch from GitHub release when repo package is unavailable
+      when: fastfetch_repo_install is failed
+      block:
+        - name: Set fastfetch package architecture
+          ansible.builtin.set_fact:
+            fastfetch_arch: "{{ fastfetch_arch_map.get(ansible_architecture, '') }}"
+          vars:
+            fastfetch_arch_map:
+              x86_64: amd64
+              aarch64: arm64
+
+        - name: Fail on unsupported fastfetch architecture
+          ansible.builtin.fail:
+            msg: "Unsupported architecture for fastfetch GitHub deb: {{ ansible_architecture }}"
+          when: fastfetch_arch == ''
+
+        - name: Get latest fastfetch release info
+          ansible.builtin.uri:
+            url: https://api.github.com/repos/fastfetch-cli/fastfetch/releases/latest
+            return_content: true
+            headers:
+              Accept: application/vnd.github+json
+              User-Agent: ansible-cloud-init
+            status_code: 200
+            timeout: 30
+          register: fastfetch_release
+          retries: 5
+          delay: 10
+          until: fastfetch_release.status == 200
+
+        - name: Find fastfetch deb asset
+          ansible.builtin.set_fact:
+            fastfetch_deb_url: >-
+              {{
+                (
+                  fastfetch_release.json.assets
+                  | selectattr('name', 'contains', fastfetch_arch + '.deb')
+                  | map(attribute='browser_download_url')
+                  | first
+                ) | default('')
+              }}
+
+        - name: Fail if fastfetch deb asset not found
+          ansible.builtin.fail:
+            msg: "Could not locate fastfetch {{ fastfetch_arch }} deb asset in GitHub release."
+          when: fastfetch_deb_url == ''
+
+        - name: Download fastfetch deb package
+          ansible.builtin.get_url:
+            url: "{{ fastfetch_deb_url }}"
+            dest: /tmp/fastfetch.deb
+            mode: '0644'
+
+        - name: Install fastfetch from deb
+          ansible.builtin.apt:
+            deb: /tmp/fastfetch.deb
+            state: present
 
     - name: Ensure needrestart auto-restarts services
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/needrestart/needrestart.conf
         regexp: '^\s*#?\s*\$nrconf\{restart\}\s*='
         line: "$nrconf{restart} = 'a';"
         state: present
-        create: yes
-        backup: yes
+        create: true
+        backup: true
 
     - name: Customize /etc/screenrc
-      blockinfile:
-        path: "/etc/screenrc"
-        create: yes
+      ansible.builtin.blockinfile:
+        path: /etc/screenrc
+        create: true
         marker: "# {mark} ANSIBLE MANAGED BLOCK - screenrc"
         block: |
           startup_message off
@@ -107,27 +135,27 @@
           vbell_msg ''
           termcapinfo *  vb=:
           altscreen on
-          
+
           # Enable arrow keys for shell history navigation
           bindkey -k up send-up
           bindkey -k dn send-down
 
     - name: Copy modified /etc/screenrc to /root/.screenrc
-      copy:
-        src: "/etc/screenrc"
-        dest: "/root/.screenrc"
-        remote_src: yes
+      ansible.builtin.copy:
+        src: /etc/screenrc
+        dest: /root/.screenrc
+        remote_src: true
 
     - name: Get list of home directories
-      find:
+      ansible.builtin.find:
         paths: /home
         file_type: directory
-        recurse: no
+        recurse: false
       register: user_dirs
 
     - name: Copy .screenrc to all home directories
-      copy:
-        src: "/etc/screenrc"
+      ansible.builtin.copy:
+        src: /etc/screenrc
         dest: "/home/{{ item.path | basename }}/.screenrc"
         owner: "{{ item.path | basename }}"
         group: "{{ item.path | basename }}"
@@ -136,8 +164,8 @@
         label: "{{ item.path }}"
 
     - name: Create .inputrc for root user
-      copy:
-        dest: "/root/.inputrc"
+      ansible.builtin.copy:
+        dest: /root/.inputrc
         owner: root
         group: root
         mode: '0644'
@@ -181,7 +209,7 @@
           set match-hidden-files on
 
     - name: Create .inputrc for all home directories
-      copy:
+      ansible.builtin.copy:
         dest: "/home/{{ item.path | basename }}/.inputrc"
         owner: "{{ item.path | basename }}"
         group: "{{ item.path | basename }}"
@@ -229,7 +257,7 @@
         label: "{{ item.path }}"
 
     - name: Create .local/share directory for each user
-      file:
+      ansible.builtin.file:
         path: "/home/{{ item.path | basename }}/.local/share"
         state: directory
         owner: "{{ item.path | basename }}"
@@ -240,17 +268,17 @@
         label: "{{ item.path }}"
 
     - name: Create .local/share directory for root user
-      file:
-        path: "/root/.local/share"
+      ansible.builtin.file:
+        path: /root/.local/share
         state: directory
         owner: root
         group: root
         mode: '0755'
 
     - name: Append custom commands to each user's .bashrc
-      blockinfile:
+      ansible.builtin.blockinfile:
         path: "/home/{{ item.path | basename }}/.bashrc"
-        create: yes
+        create: true
         marker: "# {mark} ANSIBLE MANAGED BLOCK - MOTD + fzf helper"
         block: |
           # Added by Ansible for MOTD
@@ -288,9 +316,9 @@
         label: "{{ item.path }}"
 
     - name: Append custom commands to root's .bashrc
-      blockinfile:
-        path: "/root/.bashrc"
-        create: yes
+      ansible.builtin.blockinfile:
+        path: /root/.bashrc
+        create: true
         marker: "# {mark} ANSIBLE MANAGED BLOCK - MOTD + fzf helper"
         block: |
           # Added by Ansible for MOTD
@@ -323,8 +351,9 @@
           }
         owner: root
         group: root
+
     - name: Ensure journald drop-in directory exists
-      file:
+      ansible.builtin.file:
         path: /etc/systemd/journald.conf.d
         state: directory
         owner: root
@@ -332,7 +361,7 @@
         mode: '0755'
 
     - name: Configure journald size and retention limits
-      copy:
+      ansible.builtin.copy:
         dest: /etc/systemd/journald.conf.d/99-limits.conf
         owner: root
         group: root
@@ -342,10 +371,11 @@
           SystemMaxUse=200M
           SystemKeepFree=500M
           MaxRetentionSec=14day
+
     - name: Disable cloud-init after provisioning
-      file:
+      ansible.builtin.file:
         path: /etc/cloud/cloud-init.disabled
         state: touch
         owner: root
         group: root
-        mode: '0644'      
+        mode: '0644'
