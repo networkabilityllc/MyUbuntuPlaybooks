@@ -1,40 +1,75 @@
 # My Ubuntu Ansible Playbooks
 
-This repository contains my highly opinionated and personalized Ansible playbooks for setting up new Ubuntu VMs. These playbooks automate DNS setup, Docker installation, and system customization with additional tools and configurations.
+This repository contains my highly opinionated and personalized Ansible playbooks for provisioning Ubuntu and Debian-based virtual machines, containers, and Raspberry Pi systems.
 
-> **:warning: WARNING: These playbooks are for reference only and should _not_ be used in a production environment under any circumstances. Use at your own risk!**
+These playbooks automate DNS configuration, Docker installation, shell customization, CLI tool installation, and general system hardening that I commonly apply to new systems.
 
-These work nicely for me, but review and adapt them carefully before use.
+> **WARNING:** These playbooks are designed for my personal workflows and lab environments. Review every task before running them on any system you care about.
 
 ## Playbooks
 
-1. **configure_dns.yml**  
-    - Disables `systemd-resolved`  
-    - Installs and configures Stubby as a DNS-over-TLS resolver  
-    - Replaces `/etc/resolv.conf`  
-    - Uses Cloudflare and Quad9 DNS providers  
+### configure_dns.yml
 
-2. **docker_install.yml**  
-    - Removes legacy Docker versions  
-    - Installs Docker and Docker Compose  
-    - Ensures Docker is enabled and running at boot  
+Configures local DNS resolution using Stubby and DNS-over-TLS.
 
-3. **update_new.yml**  
-    - Ensures cloud-init service waits are respected by TTY  
-    - Installs additional CLI tools (`neofetch`, `cowsay`, `fortune-mod`, `iftop`, `micro`, `duf`, etc.)  
-    - Modifies `needrestart.conf` to auto-restart updated services  
-    - Applies a custom `.screenrc` to root and all `/home` users  
-    - Appends a personalized MOTD block to `.bashrc` with ASCII output  
+Features:
+
+- Disables `systemd-resolved`
+- Installs and configures Stubby
+- Replaces `/etc/resolv.conf`
+- Configures Cloudflare and Quad9 DNS-over-TLS upstream resolvers
+
+### docker_install.yml
+
+Installs and configures Docker.
+
+Features:
+
+- Removes legacy Docker packages
+- Installs Docker Engine
+- Installs Docker Compose plugin
+- Enables Docker at boot
+- Starts Docker services
+
+### update_new.yml
+
+Performs post-provisioning customization and quality-of-life improvements.
+
+Features:
+
+- Ensures cloud-init startup ordering is respected
+- Installs commonly used administration tools
+- Installs Fastfetch from distro repositories when available
+- Falls back to GitHub releases when Fastfetch is unavailable in repositories
+- Configures needrestart for automatic service restarts
+- Deploys customized .screenrc and .inputrc files
+- Configures shell aliases and fzf integration
+- Displays Fastfetch at login
+- Configures journald retention limits
+- Disables cloud-init after provisioning
+
+Supported architectures:
+
+- amd64 / x86_64
+- arm64 / aarch64
+
+Tested on:
+
+- Ubuntu 22.04 LTS
+- Ubuntu 24.04 LTS
+- Debian 13 (Trixie)
+- Raspberry Pi OS (Debian-based)
 
 ## Usage
 
 ### Install Ansible
 
 ```bash
-sudo apt install ansible -y
+sudo apt update
+sudo apt install -y ansible
 ```
 
-### Set Up Directories and Clone Repository
+### Clone Repository
 
 ```bash
 sudo mkdir -p /ansible_scripts
@@ -42,29 +77,25 @@ cd /ansible_scripts
 sudo git clone https://github.com/networkabilityllc/MyUbuntuPlaybooks.git
 ```
 
-### Run the Playbooks
+### Run update_new.yml
 
 ```bash
 cd /ansible_scripts/MyUbuntuPlaybooks
-sudo ansible-playbook -i inventory update_new.yml
+sudo ansible-playbook update_new.yml
 ```
 
-To run `configure_dns.yml`:
+### Run configure_dns.yml
+
 ```bash
-sudo ansible-playbook -i inventory configure_dns.yml
+sudo ansible-playbook configure_dns.yml
 ```
 
-To run `docker_install.yml`:
+### Run docker_install.yml
+
 ```bash
-sudo ansible-playbook -i inventory docker_install.yml
+sudo ansible-playbook docker_install.yml
 ```
-
----
-
-## Disclaimer
-
-These playbooks are provided as-is, without any warranty. Use at your own risk. Review each task before running it on production systems.
 
 ## License
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+This project is licensed under the MIT License. See the LICENSE file for details.
