@@ -37,7 +37,7 @@
           - build-essential
           - micro
           - duf
-          # tldr disabled for now; Debian/RPi package availability differs from Ubuntu.
+          # tldr disabled for now; 
           # - tldr
           - fzf
           - bat
