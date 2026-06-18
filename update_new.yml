@@ -48,17 +48,23 @@
         update_cache: true
         cache_valid_time: 3600
 
+    - name: Check if fastfetch is available in repositories
+      ansible.builtin.command: apt-cache show fastfetch
+      register: fastfetch_check
+      ignore_errors: true
+      changed_when: false
+
     - name: Try installing fastfetch from distro repo
       ansible.builtin.apt:
         name: fastfetch
         state: present
         update_cache: true
         cache_valid_time: 3600
+      when: fastfetch_check.rc == 0
       register: fastfetch_repo_install
-      ignore_errors: true
 
     - name: Install fastfetch from GitHub release when repo package is unavailable
-      when: fastfetch_repo_install is failed
+      when: fastfetch_check.rc != 0 or (fastfetch_repo_install is defined and fastfetch_repo_install is failed)
       block:
         - name: Set fastfetch package architecture
           ansible.builtin.set_fact:
@@ -133,7 +139,7 @@
           startup_message off
           nethack on
           vbell_msg ''
-          termcapinfo *  vb=:
+          termcapinfo * vb=:
           altscreen on
 
           # Enable arrow keys for shell history navigation
