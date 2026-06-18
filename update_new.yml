@@ -59,7 +59,7 @@
     - name: Check if fastfetch is available in repositories
       ansible.builtin.command: apt-cache show fastfetch
       register: fastfetch_check
-      ignore_errors: true
+      failed_when: false
       changed_when: false
 
     - name: Try installing fastfetch from distro repo
