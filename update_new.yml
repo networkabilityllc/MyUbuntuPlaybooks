@@ -5,6 +5,12 @@
   gather_facts: true
 
   tasks:
+    # --- New Check: Verify if this is a cloud-init system ---
+    - name: Check if cloud-init is present on the system
+      ansible.builtin.stat:
+        path: /etc/cloud
+      register: cloud_init_dir
+
     - name: Ensure necessary directories exist
       ansible.builtin.file:
         path: "{{ item }}"
@@ -12,6 +18,7 @@
       loop:
         - /etc/systemd/system/getty@tty1.service.d/
 
+    # --- Conditional: Only run if /etc/cloud exists ---
     - name: Add cloud-init wait configuration
       ansible.builtin.blockinfile:
         path: /etc/systemd/system/getty@tty1.service.d/cloud-init_wait.conf
@@ -20,6 +27,7 @@
         block: |
           [Unit]
           After=cloud-final.service
+      when: cloud_init_dir.stat.exists
 
     - name: Install necessary packages
       ansible.builtin.apt:
@@ -48,17 +56,23 @@
         update_cache: true
         cache_valid_time: 3600
 
+    - name: Check if fastfetch is available in repositories
+      ansible.builtin.command: apt-cache show fastfetch
+      register: fastfetch_check
+      failed_when: false
+      changed_when: false
+
     - name: Try installing fastfetch from distro repo
       ansible.builtin.apt:
         name: fastfetch
         state: present
         update_cache: true
         cache_valid_time: 3600
+      when: fastfetch_check.rc == 0
       register: fastfetch_repo_install
-      ignore_errors: true
 
     - name: Install fastfetch from GitHub release when repo package is unavailable
-      when: fastfetch_repo_install is failed
+      when: fastfetch_check.rc != 0 or (fastfetch_repo_install is defined and fastfetch_repo_install is failed)
       block:
         - name: Set fastfetch package architecture
           ansible.builtin.set_fact:
@@ -133,7 +147,7 @@
           startup_message off
           nethack on
           vbell_msg ''
-          termcapinfo *  vb=:
+          termcapinfo * vb=:
           altscreen on
 
           # Enable arrow keys for shell history navigation
@@ -372,6 +386,7 @@
           SystemKeepFree=500M
           MaxRetentionSec=14day
 
+    # --- Conditional: Only run if /etc/cloud exists ---
     - name: Disable cloud-init after provisioning
       ansible.builtin.file:
         path: /etc/cloud/cloud-init.disabled
@@ -379,3 +394,4 @@
         owner: root
         group: root
         mode: '0644'
+      when: cloud_init_dir.stat.exists
