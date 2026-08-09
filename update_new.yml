@@ -202,3 +202,18 @@
         - cloud_init_dir.stat.exists
         - ansible_virtualization_type not in ["docker", "container", "lxc", "podman", "openvz", "systemd-nspawn"]
         - ansible_virtualization_role != "guest" or ansible_virtualization_type == "kvm"
+    - name: Configure system locale
+      block:
+        - name: Ensure en_US.UTF-8 locale is generated
+          community.general.locale_gen:
+            name: en_US.UTF-8
+            state: present
+
+        - name: Set default system locale
+          ansible.builtin.copy:
+            dest: /etc/default/locale
+            content: |
+              LANG=en_US.UTF-8
+            owner: root
+            group: root
+            mode: "0644"
