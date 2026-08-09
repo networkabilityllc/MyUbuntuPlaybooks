@@ -290,6 +290,13 @@
               echo
           fi
 
+          alias dfl='duf --only local'
+          alias bat="batcat"
+          alias fd="fdfind"
+          alias clr='source ~/.bashrc'
+          export FZF_DEFAULT_COMMAND='fdfind --type f'
+          export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+
           # fzf shell key bindings
           if [ -r /usr/share/doc/fzf/examples/key-bindings.bash ]; then
               source /usr/share/doc/fzf/examples/key-bindings.bash
@@ -343,6 +350,13 @@
               fastfetch --logo none
               echo
           fi
+
+          alias dfl='duf --only local'
+          alias bat="batcat"
+          alias fd="fdfind"
+          alias apb="ansible-playbook"
+          export FZF_DEFAULT_COMMAND='fdfind --type f'
+          export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 
           # fzf shell key bindings
           if [ -r /usr/share/doc/fzf/examples/key-bindings.bash ]; then
@@ -400,10 +414,12 @@
           SystemKeepFree=500M
           MaxRetentionSec=14day
 
-    - name: Disable cloud-init after provisioning
-      ansible.builtin.file:
-        path: /etc/cloud/cloud-init.disabled
-        state: touch
-        owner: root
-        group: root
-        mode: '0644'
+  ####### Disabled this section because it fails on containers ######
+  ####### Look into logic to enable in VMs later ###############
+   # - name: Disable cloud-init after provisioning
+   #   ansible.builtin.file:
+   #     path: /etc/cloud/cloud-init.disabled
+   #     state: touch
+   #     owner: root
+   #     group: root
+   #      mode: '0644'
