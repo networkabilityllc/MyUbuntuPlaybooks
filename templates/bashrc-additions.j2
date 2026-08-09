@@ -11,7 +11,7 @@ alias bat="batcat"
 alias fd="fdfind"
 alias clr='source ~/.bashrc'
 
-export FZF_DEFAULT_COMMAND='fdfind --type f'
+export FZF_DEFAULT_COMMAND='fdfind --type f --hidden'
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 
 if [ -r /usr/share/doc/fzf/examples/key-bindings.bash ]; then
