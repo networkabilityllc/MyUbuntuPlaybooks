@@ -423,3 +423,12 @@
    #     owner: root
    #     group: root
    #      mode: '0644'
+   #### Try this ###
+    - name: Disable cloud-init after provisioning
+      ansible.builtin.file:
+        path: /etc/cloud/cloud-init.disabled
+        state: touch
+        owner: root
+        group: root
+        mode: '0644'
+      when: ansible_virtualization_type not in ["docker", "container", "lxc", "podman", "openvz"]
