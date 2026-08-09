@@ -6,6 +6,11 @@ These playbooks automate DNS configuration, Docker installation, shell customiza
 
 > **WARNING:** These playbooks are designed for my personal workflows and lab environments. Review every task before running them on any system you care about.
 
+## Templates:
+ - bashrc-additions.j2 contains the managed shell configuration inserted into the `.bashrc` files for existing users, root, and 
+ /etc/skel.
+- inputrc.j2 customizes GNU Readline behavior for interactive shells. It enables case-insensitive and more verbose tab completion, includes hidden files in completion, adds colored completion hints and file-type indicators, preserves cursor position when navigating command history, increases the history buffer to 10,000 entries, and maps common terminal keys for history searching, word-by-word movement, beginning/end-of-line navigation, and character deletion.
+
 ## Playbooks
 
 ### configure_dns.yml
