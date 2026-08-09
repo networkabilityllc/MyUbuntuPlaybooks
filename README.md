@@ -35,6 +35,8 @@ Features:
 
 Performs post-provisioning customization and quality-of-life improvements.
 
+Note: The latest revision completely refactors `update_new.yml` to move large inline configuration blocks into Jinja2 templates and simplify provisioning logic for reliable, error-free execution across virtual machines and containers
+
 Features:
 
 - Ensures cloud-init startup ordering is respected
