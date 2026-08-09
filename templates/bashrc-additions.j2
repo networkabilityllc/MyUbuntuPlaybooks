@@ -45,7 +45,7 @@ fz() {
         if [ -d "$selection" ]; then
             dir=$(cd "$selection" 2>/dev/null && pwd) || continue
         elif [ -f "$selection" ]; then
-            sudo nano "$selection"
+            nano "$selection"
         fi
     done
 }
