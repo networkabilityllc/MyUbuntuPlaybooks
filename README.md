@@ -65,35 +65,41 @@ Tested on:
 ## Usage
 
 ### Install Ansible
-
+```
 sudo apt update
 sudo apt install -y ansible git
+```
 
 ### Clone Repository
-
+```
 sudo mkdir -p /ansible_scripts
 sudo chown -R $USER:$USER /ansible_scripts
 cd /ansible_scripts
 git clone https://github.com/networkabilityllc/MyUbuntuPlaybooks.git
+```
 
 ### Run update_new.yml
-
+```
 cd /ansible_scripts/MyUbuntuPlaybooks
 ansible-playbook -i inventory update_new.yml --become
+```
 
 ### Run configure_dns.yml
-
+```
 ansible-playbook -i inventory configure_dns.yml --become
+```
 
 ### Run docker_install.yml
-
+```
 ansible-playbook -i inventory docker_install.yml --become
+```
 
 ### Run install_portainer.yml
 
 Installs Portainer Community Edition.
-
+```
 ansible-playbook -i inventory install_portainer.yml --become
+```
 
 ## License
 
