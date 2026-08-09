@@ -83,19 +83,26 @@ sudo git clone https://github.com/networkabilityllc/MyUbuntuPlaybooks.git
 
 ```bash
 cd /ansible_scripts/MyUbuntuPlaybooks
-ansible-playbook update_new.yml --become
+ansible-playbook -i inventory update_new.yml --become
 ```
 
 ### Run configure_dns.yml
 
 ```bash
-ansible-playbook configure_dns.yml --become
+ansible-playbook -i inventory configure_dns.yml --become
 ```
 
 ### Run docker_install.yml
 
 ```bash
-ansible-playbook docker_install.yml --become
+ansible-playbook -i inventory docker_install.yml --become
+```
+
+- Install Portainer Community Edition
+### Run install_portainer.yml
+
+```bash
+ansible-playbook -i inventory install_portainer.yml --become
 ```
 
 ## License
