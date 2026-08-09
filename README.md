@@ -14,9 +14,9 @@ Configures local DNS resolution using Stubby and DNS-over-TLS.
 
 Features:
 
-- Disables `systemd-resolved`
+- Disables systemd-resolved
 - Installs and configures Stubby
-- Replaces `/etc/resolv.conf`
+- Replaces /etc/resolv.conf
 - Configures Cloudflare and Quad9 DNS-over-TLS upstream resolvers
 
 ### docker_install.yml
@@ -35,7 +35,7 @@ Features:
 
 Performs post-provisioning customization and quality-of-life improvements.
 
-Note: The latest revision completely refactors `update_new.yml` to move large inline configuration blocks into Jinja2 templates and simplify provisioning logic for reliable, error-free execution across virtual machines and containers
+Note: The latest revision completely refactors update_new.yml to move large inline configuration blocks into Jinja2 templates and simplify provisioning logic for reliable, error-free execution across virtual machines and containers.
 
 Features:
 
@@ -66,44 +66,34 @@ Tested on:
 
 ### Install Ansible
 
-```bash
 sudo apt update
 sudo apt install -y ansible git
-```
 
 ### Clone Repository
 
-```bash
 sudo mkdir -p /ansible_scripts
+sudo chown -R $USER:$USER /ansible_scripts
 cd /ansible_scripts
-sudo git clone https://github.com/networkabilityllc/MyUbuntuPlaybooks.git
-```
+git clone https://github.com/networkabilityllc/MyUbuntuPlaybooks.git
 
 ### Run update_new.yml
 
-```bash
 cd /ansible_scripts/MyUbuntuPlaybooks
 ansible-playbook -i inventory update_new.yml --become
-```
 
 ### Run configure_dns.yml
 
-```bash
 ansible-playbook -i inventory configure_dns.yml --become
-```
 
 ### Run docker_install.yml
 
-```bash
 ansible-playbook -i inventory docker_install.yml --become
-```
 
-- Install Portainer Community Edition
 ### Run install_portainer.yml
 
-```bash
+Installs Portainer Community Edition.
+
 ansible-playbook -i inventory install_portainer.yml --become
-```
 
 ## License
 
