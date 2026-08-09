@@ -68,7 +68,7 @@ Tested on:
 
 ```bash
 sudo apt update
-sudo apt install -y ansible
+sudo apt install -y ansible git
 ```
 
 ### Clone Repository
@@ -83,19 +83,19 @@ sudo git clone https://github.com/networkabilityllc/MyUbuntuPlaybooks.git
 
 ```bash
 cd /ansible_scripts/MyUbuntuPlaybooks
-sudo ansible-playbook update_new.yml
+ansible-playbook update_new.yml --become
 ```
 
 ### Run configure_dns.yml
 
 ```bash
-sudo ansible-playbook configure_dns.yml
+ansible-playbook configure_dns.yml --become
 ```
 
 ### Run docker_install.yml
 
 ```bash
-sudo ansible-playbook docker_install.yml
+ansible-playbook docker_install.yml --become
 ```
 
 ## License
