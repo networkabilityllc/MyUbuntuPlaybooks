@@ -290,24 +290,38 @@
               echo
           fi
 
-          alias dfl='duf --only local'
-          alias bat="batcat"
-          alias fd="fdfind"
-          alias clr='source ~/.bashrc'
-          export FZF_DEFAULT_COMMAND='fdfind --type f'
-          export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
-
           # fzf shell key bindings
           if [ -r /usr/share/doc/fzf/examples/key-bindings.bash ]; then
               source /usr/share/doc/fzf/examples/key-bindings.bash
           fi
 
-          # fzf + nano helper
-          fz () {
-            local dir="${1:-.}"
-            local file
-            file=$(find "$dir" -type f 2>/dev/null | fzf --preview 'batcat --style=plain --color=always {}') || return
-            sudo nano "$file"
+          # fzf + nano directory browser
+          fz() {
+              local dir="${1:-.}"
+              local selection
+
+              while true; do
+                  selection=$(
+                      {
+                          printf '%s\n' "$dir/.."
+                          find "$dir" -mindepth 1 -maxdepth 1 2>/dev/null
+                      } | fzf \
+                          --prompt="$dir > " \
+                          --preview '
+                              if [ -d {} ]; then
+                                  ls -la --color=always {}
+                              else
+                                  batcat --style=plain --color=always {} 2>/dev/null
+                              fi
+                          '
+                  ) || return
+
+                  if [ -d "$selection" ]; then
+                      dir=$(cd "$selection" 2>/dev/null && pwd) || continue
+                  elif [ -f "$selection" ]; then
+                      sudo nano "$selection"
+                  fi
+              done
           }
         owner: "{{ item.path | basename }}"
         group: "{{ item.path | basename }}"
@@ -330,24 +344,38 @@
               echo
           fi
 
-          alias dfl='duf --only local'
-          alias bat="batcat"
-          alias fd="fdfind"
-          alias apb="ansible-playbook"
-          export FZF_DEFAULT_COMMAND='fdfind --type f'
-          export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
-
           # fzf shell key bindings
           if [ -r /usr/share/doc/fzf/examples/key-bindings.bash ]; then
               source /usr/share/doc/fzf/examples/key-bindings.bash
           fi
 
-          # fzf + nano helper
-          fz () {
-            local dir="${1:-.}"
-            local file
-            file=$(find "$dir" -type f 2>/dev/null | fzf --preview 'batcat --style=plain --color=always {}') || return
-            sudo nano "$file"
+          # fzf + nano directory browser
+          fz() {
+              local dir="${1:-.}"
+              local selection
+
+              while true; do
+                  selection=$(
+                      {
+                          printf '%s\n' "$dir/.."
+                          find "$dir" -mindepth 1 -maxdepth 1 2>/dev/null
+                      } | fzf \
+                          --prompt="$dir > " \
+                          --preview '
+                              if [ -d {} ]; then
+                                  ls -la --color=always {}
+                              else
+                                  batcat --style=plain --color=always {} 2>/dev/null
+                              fi
+                          '
+                  ) || return
+
+                  if [ -d "$selection" ]; then
+                      dir=$(cd "$selection" 2>/dev/null && pwd) || continue
+                  elif [ -f "$selection" ]; then
+                      sudo nano "$selection"
+                  fi
+              done
           }
         owner: root
         group: root
