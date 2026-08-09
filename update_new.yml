@@ -42,24 +42,26 @@
     - name: Install system package dependencies
       ansible.builtin.apt:
         name:
-          - needrestart
-          - cowsay
-          - fortune-mod
-          - python3
-          - python3-pip
-          - python3-docker
-          - python3-venv
-          - iftop
-          - net-tools
-          - unzip
-          - build-essential
-          - micro
-          - duf
-          - fzf
+          - 7zip
           - bat
+          - build-essential
+          - cowsay
+          - duf
           - fd-find
+          - fortune-mod
+          - fzf
+          - iftop
           - libpam-modules
           - libpam-modules-bin
+          - locales
+          - micro
+          - needrestart
+          - net-tools
+          - python3
+          - python3-docker
+          - python3-pip
+          - python3-venv
+          - unzip
         state: present
         update_cache: true
         cache_valid_time: 3600
