@@ -1,0 +1,48 @@
+export PATH="/usr/games:$PATH"
+
+if [[ $- == *i* ]]; then
+    clear
+    fastfetch --logo none
+    echo
+fi
+
+alias dfl='duf --only local'
+alias bat="batcat"
+alias fd="fdfind"
+alias clr='source ~/.bashrc'
+alias dh='du . -h'
+
+export FZF_DEFAULT_COMMAND='fdfind --hidden'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+
+if [ -r /usr/share/doc/fzf/examples/key-bindings.bash ]; then
+    source /usr/share/doc/fzf/examples/key-bindings.bash
+fi
+
+fz() {
+    local dir="${1:-.}"
+    local selection
+
+    while true; do
+        selection=$(
+            {
+                printf '%s\n' "$dir/.."
+                find "$dir" -mindepth 1 -maxdepth 1 2>/dev/null
+            } | fzf \
+                --prompt="$dir > " \
+                --preview '
+                    if [ -d {} ]; then
+                        ls -la --color=always {}
+                    else
+                        batcat --style=plain --color=always {} 2>/dev/null
+                    fi
+                '
+        ) || return
+
+        if [ -d "$selection" ]; then
+            dir=$(cd "$selection" 2>/dev/null && pwd) || continue
+        elif [ -f "$selection" ]; then
+            nano "$selection"
+        fi
+    done
+}

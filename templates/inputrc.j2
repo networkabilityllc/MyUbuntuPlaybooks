@@ -1,0 +1,21 @@
+set completion-ignore-case on
+set show-all-if-ambiguous on
+set show-all-if-unmodified on
+set completion-display-width 0
+set colored-completion-prefix on
+set colored-stats on
+set menu-complete-display-prefix on
+set enable-keypad on
+set visible-stats on
+set history-preserve-point on
+set history-size 10000
+
+"\e[1;3A": history-search-backward
+"\e[1;3B": history-search-forward
+"\e[1;5C": forward-word
+"\e[1;5D": backward-word
+"\e[H": beginning-of-line
+"\e[F": end-of-line
+"\e[3~": delete-char
+
+set match-hidden-files on
