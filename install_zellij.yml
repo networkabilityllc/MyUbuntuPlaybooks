@@ -1,5 +1,5 @@
 ---
-- name: Install Zellij
+- name: Install and configure Zellij
   hosts: all
   become: true
   gather_facts: true
@@ -11,6 +11,11 @@
     zellij_version: "latest"
 
     zellij_install_path: "/usr/local/bin/zellij"
+
+    # User who should receive the Zellij config.
+    # Override with:
+    #   -e zellij_user=myusername
+    zellij_user: "{{ ansible_user }}"
 
   tasks:
     - name: Verify supported operating system
@@ -122,6 +127,63 @@
         path: "{{ zellij_temp.path }}"
         state: absent
       when: zellij_install_required
+
+    - name: Look up Zellij user
+      ansible.builtin.getent:
+        database: passwd
+        key: "{{ zellij_user }}"
+
+    - name: Set Zellij user home directory
+      ansible.builtin.set_fact:
+        zellij_user_home: "{{ ansible_facts.getent_passwd[zellij_user][4] }}"
+
+    - name: Create Zellij config directory
+      ansible.builtin.file:
+        path: "{{ zellij_user_home }}/.config/zellij"
+        state: directory
+        owner: "{{ zellij_user }}"
+        group: "{{ zellij_user }}"
+        mode: "0755"
+
+    - name: Check whether Zellij config already exists
+      ansible.builtin.stat:
+        path: "{{ zellij_user_home }}/.config/zellij/config.kdl"
+      register: zellij_config
+
+    - name: Generate default Zellij config
+      ansible.builtin.shell:
+        cmd: >-
+          {{ zellij_install_path }} setup --dump-config
+          > {{ zellij_user_home }}/.config/zellij/config.kdl
+      become_user: "{{ zellij_user }}"
+      when: not zellij_config.stat.exists
+
+    - name: Enable complete keybinding override
+      ansible.builtin.replace:
+        path: "{{ zellij_user_home }}/.config/zellij/config.kdl"
+        regexp: '^keybinds \{'
+        replace: 'keybinds clear-defaults=true {'
+        owner: "{{ zellij_user }}"
+        group: "{{ zellij_user }}"
+        mode: "0644"
+
+    - name: Change Ctrl-H Move binding to Ctrl-M
+      ansible.builtin.replace:
+        path: "{{ zellij_user_home }}/.config/zellij/config.kdl"
+        regexp: 'bind "Ctrl h" \{ SwitchToMode "Move"; \}'
+        replace: 'bind "Ctrl m" { SwitchToMode "Move"; }'
+        owner: "{{ zellij_user }}"
+        group: "{{ zellij_user }}"
+        mode: "0644"
+
+    - name: Enable Zellij mouse mode
+      ansible.builtin.replace:
+        path: "{{ zellij_user_home }}/.config/zellij/config.kdl"
+        regexp: '^// mouse_mode false$'
+        replace: 'mouse_mode true'
+        owner: "{{ zellij_user }}"
+        group: "{{ zellij_user }}"
+        mode: "0644"
 
     - name: Verify Zellij installation
       ansible.builtin.command:
