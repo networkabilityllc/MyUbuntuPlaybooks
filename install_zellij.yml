@@ -13,9 +13,13 @@
     zellij_install_path: "/usr/local/bin/zellij"
 
     # User who should receive the Zellij config.
-    # Override with:
-    #   -e zellij_user=myusername
-    zellij_user: "{{ ansible_user }}"
+    #
+    # For remote hosts, ansible_user is used when defined.
+    # For localhost runs, fall back to the user running ansible-playbook.
+    #
+    # Override explicitly with:
+    #   -e zellij_user=tomdavidson
+    zellij_user: "{{ ansible_user | default(lookup('env', 'USER')) }}"
 
   tasks:
     - name: Verify supported operating system
