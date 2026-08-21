@@ -1,0 +1,134 @@
+---
+- name: Install Zellij
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    # Use "latest" by default.
+    # Override with:
+    #   ansible-playbook install_zellij.yml -e zellij_version=0.44.3
+    zellij_version: "latest"
+
+    zellij_install_path: "/usr/local/bin/zellij"
+
+  tasks:
+    - name: Verify supported operating system
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution == "Ubuntu"
+        fail_msg: "This playbook currently supports Ubuntu only."
+
+    - name: Determine Zellij architecture
+      ansible.builtin.set_fact:
+        zellij_arch: >-
+          {{
+            {
+              'x86_64': 'x86_64',
+              'aarch64': 'aarch64'
+            }.get(ansible_architecture, 'unsupported')
+          }}
+
+    - name: Verify supported architecture
+      ansible.builtin.assert:
+        that:
+          - zellij_arch != "unsupported"
+        fail_msg: "Unsupported architecture: {{ ansible_architecture }}"
+
+    - name: Get latest Zellij release information
+      ansible.builtin.uri:
+        url: "https://api.github.com/repos/zellij-org/zellij/releases/latest"
+        method: GET
+        return_content: true
+        headers:
+          Accept: "application/vnd.github+json"
+      register: zellij_latest_release
+      when: zellij_version == "latest"
+
+    - name: Set resolved Zellij version
+      ansible.builtin.set_fact:
+        zellij_resolved_version: >-
+          {{
+            (
+              zellij_latest_release.json.tag_name
+              | regex_replace('^v', '')
+            )
+            if zellij_version == "latest"
+            else
+            (
+              zellij_version
+              | regex_replace('^v', '')
+            )
+          }}
+
+    - name: Display Zellij version to be installed
+      ansible.builtin.debug:
+        msg: "Installing Zellij {{ zellij_resolved_version }}"
+
+    - name: Check currently installed Zellij version
+      ansible.builtin.command:
+        cmd: "{{ zellij_install_path }} --version"
+      register: zellij_installed_version
+      changed_when: false
+      failed_when: false
+
+    - name: Determine whether Zellij installation is required
+      ansible.builtin.set_fact:
+        zellij_install_required: >-
+          {{
+            zellij_installed_version.rc != 0
+            or
+            (
+              zellij_installed_version.stdout
+              | regex_replace('^zellij\\s+', '')
+              | trim
+            ) != zellij_resolved_version
+          }}
+
+    - name: Create temporary Zellij installation directory
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: zellij-
+      register: zellij_temp
+      when: zellij_install_required
+
+    - name: Download Zellij
+      ansible.builtin.get_url:
+        url: >-
+          https://github.com/zellij-org/zellij/releases/download/v{{ zellij_resolved_version }}/zellij-{{ zellij_arch }}-unknown-linux-musl.tar.gz
+        dest: "{{ zellij_temp.path }}/zellij.tar.gz"
+        mode: "0644"
+      when: zellij_install_required
+
+    - name: Extract Zellij
+      ansible.builtin.unarchive:
+        src: "{{ zellij_temp.path }}/zellij.tar.gz"
+        dest: "{{ zellij_temp.path }}"
+        remote_src: true
+      when: zellij_install_required
+
+    - name: Install Zellij binary
+      ansible.builtin.copy:
+        src: "{{ zellij_temp.path }}/zellij"
+        dest: "{{ zellij_install_path }}"
+        owner: root
+        group: root
+        mode: "0755"
+        remote_src: true
+      when: zellij_install_required
+
+    - name: Remove temporary Zellij installation directory
+      ansible.builtin.file:
+        path: "{{ zellij_temp.path }}"
+        state: absent
+      when: zellij_install_required
+
+    - name: Verify Zellij installation
+      ansible.builtin.command:
+        cmd: "{{ zellij_install_path }} --version"
+      register: zellij_version_output
+      changed_when: false
+
+    - name: Display installed Zellij version
+      ansible.builtin.debug:
+        msg: "{{ zellij_version_output.stdout }}"
