@@ -73,24 +73,16 @@
             name: en_US.UTF-8
             state: present
 
-        - name: Set default system locale via update-locale
-          ansible.builtin.command:
-            cmd: update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
-          changed_when: true
-
-        - name: Force locale environment variables for current Ansible run
-          ansible.builtin.set_fact:
-            ansible_env: "{{ ansible_env | combine({'LANG': 'en_US.UTF-8', 'LC_ALL': 'en_US.UTF-8'}) }}"
-
-        - name: Ensure /etc/environment has locale defined
+        - name: Set en_US.UTF-8 as the default system locale
           ansible.builtin.lineinfile:
-            path: /etc/environment
-            regexp: "^{{ item.key }}="
-            line: '{{ item.key }}="{{ item.value }}"'
+            path: /etc/default/locale
+            regexp: '^LANG='
+            line: 'LANG=en_US.UTF-8'
             state: present
-          loop:
-            - { key: 'LANG', value: 'en_US.UTF-8' }
-            - { key: 'LC_ALL', value: 'en_US.UTF-8' }
+            create: true
+            owner: root
+            group: root
+            mode: '0644'
 
     - name: Check if fastfetch is available in repositories
       ansible.builtin.command: apt-cache show fastfetch
