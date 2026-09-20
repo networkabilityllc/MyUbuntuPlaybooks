@@ -1,6 +1,6 @@
 ---
 - name: Configure timezone, NTP, and 24-hour time
-  hosts: ubuntu_servers
+  hosts: all
   become: true
 
   tasks:
