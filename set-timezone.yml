@@ -1,0 +1,128 @@
+---
+- name: Configure timezone, NTP, and 24-hour time
+  hosts: ubuntu_servers
+  become: true
+
+  tasks:
+    - name: Set timezone to America/Chicago
+      community.general.timezone:
+        name: America/Chicago
+
+    - name: Ensure en_US.UTF-8 locale is generated
+      community.general.locale_gen:
+        name: en_US.UTF-8
+        state: present
+
+    - name: Create systemd-timesyncd configuration directory
+      ansible.builtin.file:
+        path: /etc/systemd/timesyncd.conf.d
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Configure systemd-timesyncd NTP servers
+      ansible.builtin.copy:
+        dest: /etc/systemd/timesyncd.conf.d/ntp.conf
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [Time]
+          NTP=pool.ntp.org
+          FallbackNTP=ntp.ubuntu.com
+      notify: Restart systemd-timesyncd
+
+    - name: Ensure systemd-timesyncd is enabled and running
+      ansible.builtin.systemd_service:
+        name: systemd-timesyncd
+        enabled: true
+        state: started
+
+    - name: Check /etc/default/locale
+      ansible.builtin.stat:
+        path: /etc/default/locale
+        follow: false
+      register: default_locale
+
+    - name: Check /etc/locale.conf
+      ansible.builtin.stat:
+        path: /etc/locale.conf
+        follow: false
+      register: locale_conf
+
+    - name: Remove LC_ALL from locale.conf when /etc/default/locale is a symlink
+      ansible.builtin.lineinfile:
+        path: /etc/locale.conf
+        regexp: '^LC_ALL='
+        state: absent
+      when:
+        - default_locale.stat.exists
+        - default_locale.stat.islnk
+
+    - name: Set LANG in locale.conf when /etc/default/locale is a symlink
+      ansible.builtin.lineinfile:
+        path: /etc/locale.conf
+        regexp: '^LANG='
+        line: 'LANG=en_US.UTF-8'
+        create: true
+        owner: root
+        group: root
+        mode: "0644"
+      when:
+        - default_locale.stat.exists
+        - default_locale.stat.islnk
+
+    - name: Set 24-hour time in locale.conf when /etc/default/locale is a symlink
+      ansible.builtin.lineinfile:
+        path: /etc/locale.conf
+        regexp: '^LC_TIME='
+        line: 'LC_TIME=C.UTF-8'
+        create: true
+        owner: root
+        group: root
+        mode: "0644"
+      when:
+        - default_locale.stat.exists
+        - default_locale.stat.islnk
+
+    - name: Remove LC_ALL from /etc/default/locale when it is a regular file
+      ansible.builtin.lineinfile:
+        path: /etc/default/locale
+        regexp: '^LC_ALL='
+        state: absent
+      when:
+        - default_locale.stat.exists
+        - not default_locale.stat.islnk
+
+    - name: Set LANG in /etc/default/locale when it is a regular file
+      ansible.builtin.lineinfile:
+        path: /etc/default/locale
+        regexp: '^LANG='
+        line: 'LANG=en_US.UTF-8'
+        create: true
+        owner: root
+        group: root
+        mode: "0644"
+      when:
+        - default_locale.stat.exists
+        - not default_locale.stat.islnk
+
+    - name: Set 24-hour time in /etc/default/locale when it is a regular file
+      ansible.builtin.lineinfile:
+        path: /etc/default/locale
+        regexp: '^LC_TIME='
+        line: 'LC_TIME=C.UTF-8'
+        create: true
+        owner: root
+        group: root
+        mode: "0644"
+      when:
+        - default_locale.stat.exists
+        - not default_locale.stat.islnk
+
+  handlers:
+    - name: Restart systemd-timesyncd
+      ansible.builtin.systemd_service:
+        name: systemd-timesyncd
+        state: restarted
