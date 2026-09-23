@@ -1,0 +1,222 @@
+---
+- name: Install Komodo Core
+  hosts: localhost
+  become: true
+  gather_facts: true
+
+  vars:
+    komodo_install_dir: /opt/komodo
+    komodo_data_dir: /var/lib/komodo
+    komodo_periphery_root: /etc/komodo
+    komodo_image_tag: "2"
+    komodo_port: 9120
+    komodo_title: Komodo
+    komodo_admin_username: admin
+    komodo_first_server_name: "{{ ansible_hostname }}"
+    komodo_timezone: Etc/UTC
+    # Override this when Komodo is reached through DNS or a reverse proxy.
+    komodo_host: >-
+      http://{{ ansible_default_ipv4.address | default(ansible_host | default('localhost')) }}:{{ komodo_port }}
+
+  tasks:
+    - name: Check whether Docker is installed
+      ansible.builtin.command: docker --version
+      register: docker_installed
+      changed_when: false
+      failed_when: false
+
+    - name: Fail when Docker is not installed
+      ansible.builtin.fail:
+        msg: Docker is not installed. Install Docker Engine before running this playbook.
+      when: docker_installed.rc != 0
+
+    - name: Check whether the Docker Compose plugin is installed
+      ansible.builtin.command: docker compose version
+      register: docker_compose_installed
+      changed_when: false
+      failed_when: false
+
+    - name: Fail when the Docker Compose plugin is not installed
+      ansible.builtin.fail:
+        msg: >-
+          The Docker Compose plugin is not installed. Install docker-compose-plugin
+          before running this playbook.
+      when: docker_compose_installed.rc != 0
+
+    - name: Create Komodo directories
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "{{ item.mode }}"
+      loop:
+        - { path: "{{ komodo_install_dir }}", mode: "0755" }
+        - { path: "{{ komodo_data_dir }}", mode: "0750" }
+        - { path: "{{ komodo_data_dir }}/backups", mode: "0750" }
+        - { path: "{{ komodo_data_dir }}/secrets", mode: "0700" }
+        - { path: "{{ komodo_periphery_root }}", mode: "0755" }
+        - { path: "{{ komodo_periphery_root }}/stacks", mode: "0755" }
+        - { path: "{{ komodo_periphery_root }}/repos", mode: "0755" }
+        - { path: "{{ komodo_periphery_root }}/builds", mode: "0755" }
+
+    - name: Generate persistent Komodo secrets
+      ansible.builtin.command:
+        argv:
+          - openssl
+          - rand
+          - -out
+          - "{{ komodo_data_dir }}/secrets/{{ item }}"
+          - -hex
+          - "32"
+        creates: "{{ komodo_data_dir }}/secrets/{{ item }}"
+      loop:
+        - database_password
+        - admin_password
+        - jwt_secret
+        - webhook_secret
+      no_log: true
+
+    - name: Set container-readable permissions on Komodo secret files
+      ansible.builtin.file:
+        path: "{{ komodo_data_dir }}/secrets/{{ item }}"
+        state: file
+        owner: root
+        group: root
+        # The parent directory is 0700, preventing access by non-root host users.
+        # The files must be readable after the containers drop root privileges.
+        mode: "0644"
+      loop:
+        - database_password
+        - admin_password
+        - jwt_secret
+        - webhook_secret
+
+    - name: Write Komodo environment file
+      ansible.builtin.copy:
+        dest: "{{ komodo_install_dir }}/compose.env"
+        owner: root
+        group: root
+        mode: "0600"
+        content: |
+          COMPOSE_KOMODO_IMAGE_TAG={{ komodo_image_tag }}
+          COMPOSE_KOMODO_BACKUPS_PATH={{ komodo_data_dir }}/backups
+          KOMODO_DATABASE_USERNAME=komodo
+          TZ={{ komodo_timezone }}
+
+          KOMODO_HOST={{ komodo_host }}
+          KOMODO_TITLE={{ komodo_title }}
+          KOMODO_PERIPHERY_PUBLIC_KEY=file:/config/keys/periphery.pub
+          KOMODO_LOCAL_AUTH=true
+          KOMODO_INIT_ADMIN_USERNAME={{ komodo_admin_username }}
+          KOMODO_FIRST_SERVER_NAME={{ komodo_first_server_name }}
+          KOMODO_DISABLE_CONFIRM_DIALOG=true
+          KOMODO_DISABLE_INIT_RESOURCES=false
+          KOMODO_DEFAULT_PAGINATION_LIMIT=50
+          KOMODO_JWT_TTL=1-day
+          KOMODO_MONITORING_INTERVAL=15-sec
+          KOMODO_RESOURCE_POLL_INTERVAL=1-hr
+          KOMODO_DISABLE_USER_REGISTRATION=true
+          KOMODO_ENABLE_NEW_USERS=false
+          KOMODO_DISABLE_NON_ADMIN_CREATE=false
+          KOMODO_TRANSPARENT_MODE=false
+          KOMODO_OIDC_ENABLED=false
+          KOMODO_GITHUB_OAUTH_ENABLED=false
+          KOMODO_GOOGLE_OAUTH_ENABLED=false
+          KOMODO_LOGGING_PRETTY=false
+          KOMODO_PRETTY_STARTUP_CONFIG=false
+
+          PERIPHERY_CORE_ADDRESS=ws://core:9120
+          PERIPHERY_CONNECT_AS={{ komodo_first_server_name }}
+          PERIPHERY_CORE_PUBLIC_KEYS=file:/config/keys/core.pub
+          PERIPHERY_ROOT_DIRECTORY={{ komodo_periphery_root }}
+          PERIPHERY_DISABLE_TERMINALS=false
+          PERIPHERY_DISABLE_CONTAINER_TERMINALS=false
+          PERIPHERY_INCLUDE_DISK_MOUNTS=/etc/hostname
+          PERIPHERY_LOGGING_PRETTY=false
+          PERIPHERY_PRETTY_STARTUP_CONFIG=false
+
+    - name: Write Komodo Docker Compose file
+      ansible.builtin.copy:
+        dest: "{{ komodo_install_dir }}/compose.yaml"
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          services:
+            mongo:
+              image: mongo
+              command: --quiet --wiredTigerCacheSizeGB 0.25
+              restart: unless-stopped
+              labels:
+                komodo.skip:
+              environment:
+                MONGO_INITDB_ROOT_USERNAME: komodo
+                MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/database_password
+              volumes:
+                - mongo-data:/data/db
+                - mongo-config:/data/configdb
+                - {{ komodo_data_dir }}/secrets/database_password:/run/secrets/database_password:ro
+
+            core:
+              image: ghcr.io/moghtech/komodo-core:${COMPOSE_KOMODO_IMAGE_TAG:-2}
+              init: true
+              restart: unless-stopped
+              depends_on:
+                - mongo
+              ports:
+                - "{{ komodo_port }}:9120"
+              env_file: ./compose.env
+              environment:
+                KOMODO_DATABASE_ADDRESS: mongo:27017
+                KOMODO_DATABASE_USERNAME: komodo
+                KOMODO_DATABASE_PASSWORD_FILE: /run/secrets/database_password
+                KOMODO_INIT_ADMIN_PASSWORD_FILE: /run/secrets/admin_password
+                KOMODO_JWT_SECRET_FILE: /run/secrets/jwt_secret
+                KOMODO_WEBHOOK_SECRET_FILE: /run/secrets/webhook_secret
+              volumes:
+                - keys:/config/keys
+                - ${COMPOSE_KOMODO_BACKUPS_PATH}:/backups
+                - {{ komodo_data_dir }}/secrets/database_password:/run/secrets/database_password:ro
+                - {{ komodo_data_dir }}/secrets/admin_password:/run/secrets/admin_password:ro
+                - {{ komodo_data_dir }}/secrets/jwt_secret:/run/secrets/jwt_secret:ro
+                - {{ komodo_data_dir }}/secrets/webhook_secret:/run/secrets/webhook_secret:ro
+
+            periphery:
+              image: ghcr.io/moghtech/komodo-periphery:${COMPOSE_KOMODO_IMAGE_TAG:-2}
+              init: true
+              restart: unless-stopped
+              depends_on:
+                - core
+              env_file: ./compose.env
+              volumes:
+                - keys:/config/keys
+                - /var/run/docker.sock:/var/run/docker.sock
+                - /proc:/proc
+                - {{ komodo_periphery_root }}:{{ komodo_periphery_root }}
+
+          volumes:
+            mongo-data:
+            mongo-config:
+            keys:
+
+    - name: Deploy Komodo
+      community.docker.docker_compose_v2:
+        project_src: "{{ komodo_install_dir }}"
+        project_name: komodo
+        files:
+          - compose.yaml
+        env_files:
+          - compose.env
+        state: present
+        pull: missing
+        remove_orphans: true
+
+    - name: Show Komodo access information
+      ansible.builtin.debug:
+        msg:
+          - "Komodo is available at {{ komodo_host }}"
+          - "Initial username: {{ komodo_admin_username }}"
+          - >-
+            Initial password: run 'sudo cat
+            {{ komodo_data_dir }}/secrets/admin_password' on this VM.
