@@ -13,6 +13,7 @@
     komodo_title: Komodo
     komodo_admin_username: admin
     komodo_first_server_name: "{{ ansible_hostname }}"
+    komodo_mongo_image: "mongo:9.0.4"
     komodo_timezone: Etc/UTC
     # Override this when Komodo is reached through DNS or a reverse proxy.
     komodo_host: >-
@@ -145,7 +146,7 @@
         content: |
           services:
             mongo:
-              image: mongo
+              image: "{{ komodo_mongo_image }}"
               command: --quiet --wiredTigerCacheSizeGB 0.25
               restart: unless-stopped
               labels:
